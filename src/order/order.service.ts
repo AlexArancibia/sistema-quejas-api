@@ -67,7 +67,7 @@ export class OrderService {
         customer: true,
         lineItems: {
           include: {
-            product: true,
+ 
             variant: true,
           },
         },
@@ -199,7 +199,7 @@ export class OrderService {
       customer: true,
       lineItems: {
         include: {
-          product: true,
+ 
           variant: true,
         },
       },
@@ -261,7 +261,7 @@ export class OrderService {
           customer: true,
           lineItems: {
             include: {
-              product: true,
+ 
               variant: true,
             },
           },

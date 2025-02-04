@@ -111,6 +111,12 @@ enum ShippingStatus {
   RETURNED
 }
 
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
 // Model for storing shop-wide settings
 model ShopSettings {
   id                String           @id @default(dbgenerated("'shop_' || substr(gen_random_uuid()::text, 1, 13)"))
@@ -133,7 +139,7 @@ model ShopSettings {
   timezone          String?          // Timezone of the shop
   weightUnit        String?          // Unit used for weight measurements
   taxesIncluded     Boolean          @default(false) // Whether prices include taxes
-  taxShipping       Boolean          @default(false) // Whether shipping is taxed
+  taxValue          Decimal
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -159,9 +165,11 @@ model Currency {
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt
 
-  ProductPrice ProductPrice[]
+
   VariantPrice VariantPrice[]
   paymentTransactions PaymentTransaction[]
+
+  ShippingMethodPrice ShippingMethodPrice[]
 }
 
 // Model for storing exchange rates between currencies
@@ -205,41 +213,26 @@ model Product {
   description       String?         // Description of the product
   slug              String          @unique // URL-friendly version of the title
   vendor            String?         // Vendor or brand of the product
-  prices            ProductPrice[]  // Prices of the product in different currencies
+  fbt               Json?           // frecuently bought together
+  allowBackorder    Boolean       @default(false) 
+  // prices            ProductPrice[]  // Prices of the product in different currencies
   status            ProductStatus   @default(DRAFT) // Current status of the product
   categories        Category[]      // Categories the product belongs to
   variants          ProductVariant[] // Variants of the product
   imageUrls         String[]        // URLs of the product images
   collections       Collection[]    // Collections the product belongs to
-  orderItems        OrderItem[]     // Order items referencing this product
-  sku               String?          // Stock Keeping Unit
-  inventoryQuantity Int             @default(0) // Available quantity in inventory
-  weightValue       Decimal?        // Weight of the product
   isArchived        Boolean         @default(false) // Whether the product is archived
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   metaTitle         String?         // Meta title for SEO
   metaDescription   String?         // Meta description for SEO
 
-  Coupon Coupon[]
+  coupon Coupon[]
 
   @@index([status, vendor])
 }
 
-// Model for product prices in different currencies
-model ProductPrice {
-  id         String   @id @default(dbgenerated("'pp_' || substr(gen_random_uuid()::text, 1, 13)"))
-  product    Product  @relation(fields: [productId], references: [id])
-  productId  String   // ID of the product this price is for
-  currency   Currency @relation(fields: [currencyId], references: [id])
-  currencyId String   // ID of the currency for this price
-  price      Decimal  // Price value
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([productId, currencyId])
-}
-
+ 
 // Model for product variants
 model ProductVariant {
   id                String        @id @default(dbgenerated("'var_' || substr(gen_random_uuid()::text, 1, 13)"))
@@ -312,8 +305,8 @@ model Order {
   couponId          String?                // ID of the coupon applied to this order
   paymentProvider   PaymentProvider?       @relation(fields: [paymentProviderId], references: [id])
   paymentProviderId String?                // ID of the payment provider used
-  paymentStatus     String?          // Status of the payment (e.g., "pending", "completed", "failed")
-  paymentDetails    Json?            // Additional payment details (e.g., transaction ID, payment method details)
+  paymentStatus     PaymentStatus?          @default(PENDING)
+  paymentDetails    Json?                 // Additional payment details (e.g., transaction ID, payment method details)
   shippingMethod    ShippingMethod?        @relation(fields: [shippingMethodId], references: [id])
   shippingMethodId  String?                // ID of the shipping method used
   shippingStatus    ShippingStatus         @default(PENDING) // Current shipping status
@@ -339,8 +332,6 @@ model OrderItem {
   id                 String    @id @default(dbgenerated("'oi_' || substr(gen_random_uuid()::text, 1, 13)"))
   order              Order     @relation(fields: [orderId], references: [id])
   orderId            String    // ID of the order this item belongs to
-  product            Product   @relation(fields: [productId], references: [id])
-  productId          String    // ID of the product
   variant            ProductVariant? @relation(fields: [variantId], references: [id])
   variantId          String?   // ID of the product variant (if applicable)
   title              String    // Title of the product
@@ -421,12 +412,26 @@ model ShippingMethod {
   id          String             @id @default(dbgenerated("'sm_' || substr(gen_random_uuid()::text, 1, 13)"))
   name        String             // Name of the shipping method
   description String?            // Description of the shipping method
-  price       Decimal            // Base price of the shipping method
+  prices                ShippingMethodPrice[] // Prices for different currencies
   estimatedDeliveryTime String?  // Estimated delivery time (e.g., "3-5 business days")
   isActive    Boolean            @default(true) // Whether the method is active
   orders      Order[]            // Orders using this shipping method
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
+}
+
+
+model ShippingMethodPrice {
+  id               String        @id @default(dbgenerated("'smp_' || substr(gen_random_uuid()::text, 1, 13)"))
+  shippingMethod   ShippingMethod @relation(fields: [shippingMethodId], references: [id])
+  shippingMethodId String
+  currency         Currency       @relation(fields: [currencyId], references: [id])
+  currencyId       String
+  price            Decimal
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([shippingMethodId, currencyId])
 }
 
  
@@ -509,7 +514,7 @@ model PaymentTransaction {
   amount            Decimal
   currency          Currency @relation(fields: [currencyId], references: [id])
   currencyId        String
-  status            String   // e.g., "pending", "completed", "failed"
+  status            PaymentStatus   // e.g., "pending", "completed", "failed"
   transactionId     String?  // ID provided by the payment gateway
   paymentMethod     String?  // e.g., "credit_card", "bank_transfer"
   errorMessage      String?

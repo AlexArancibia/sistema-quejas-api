@@ -67,7 +67,6 @@ export class CreateShopDto {
   taxesIncluded?: boolean;
 
   @IsOptional()
-  @IsBoolean()
-  taxShipping?: boolean;
+  taxValue: number;
 }
 

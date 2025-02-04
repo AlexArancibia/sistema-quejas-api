@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateProductDto, CreateProductPriceDto, CreateProductVariantDto } from './dto/create-product.dto';
+import { CreateProductDto, CreateProductVariantDto } from './dto/create-product.dto'; // Eliminado CreateProductPriceDto
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
@@ -10,97 +10,37 @@ export class ProductService {
   constructor(private prisma: PrismaService) {}
 
   async create(createProductDto: CreateProductDto) {
-    const { categoryIds, collectionIds, prices, variants, ...productData } = createProductDto;
+    const { categoryIds, collectionIds, variants, ...productData } = createProductDto; // Eliminado prices
 
     try {
       return await this.prisma.$transaction(async (prisma) => {
-        // Create the product
-        let product;
-        try {
-          product = await prisma.product.create({
-            data: {
-              ...productData,
-              categories: {
-                connect: categoryIds.map(id => ({ id })),
-              },
-              ...(collectionIds && collectionIds.length > 0 && {
-                collections: {
-                  connect: collectionIds.map(id => ({ id })),
-                },
-              }),
+        // Crear el producto
+        const product = await prisma.product.create({
+          data: {
+            ...productData,
+            categories: {
+              connect: categoryIds?.map(id => ({ id })),
             },
-            include: {
-              categories: true,
-              collections: true,
+            collections: {
+              connect: collectionIds?.map(id => ({ id })),
             },
-          });
-        } catch (error) {
-          this.logger.error(`Error creating product: ${error.message}`, error.stack);
-          this.handlePrismaError(error, 'Error creating product');
-        }
-
-        // Create product prices
-        try {
-          await this.createProductPrices(prisma, product.id, prices);
-        } catch (error) {
-          this.logger.error(`Error creating product prices: ${error.message}`, error.stack);
-          throw new InternalServerErrorException('Error creating product prices');
-        }
-
-        // Create product variants
-        try {
-          await this.createProductVariants(prisma, product.id, variants);
-        } catch (error) {
-          this.logger.error(`Error creating product variants: ${error.message}`, error.stack);
-          throw new InternalServerErrorException('Error creating product variants');
-        }
-
-        // Fetch the complete product with all related data
-        const createdProduct = await prisma.product.findUnique({
-          where: { id: product.id },
+          },
           include: {
             categories: true,
             collections: true,
-            prices: { include: { currency: true } },
-            variants: {
-              include: {
-                prices: { include: { currency: true } },
-              },
-            },
           },
         });
 
-        if (!createdProduct) {
-          throw new InternalServerErrorException(`Product was created but could not be retrieved`);
+        // Crear variantes del producto
+        if (variants && variants.length > 0) {
+          await this.createProductVariants(prisma, product.id, variants);
         }
 
-        return createdProduct;
+        // Obtener el producto completo con relaciones
+        return this.getFullProduct(prisma, product.id);
       });
     } catch (error) {
-      this.logger.error(`Error in create product transaction: ${error.message}`, error.stack);
-      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ConflictException) {
-        throw error;
-      }
-      throw new InternalServerErrorException('Error creating product');
-    }
-  }
-
-  private async createProductPrices(prisma: any, productId: string, prices: CreateProductPriceDto[]) {
-    try {
-      await Promise.all(
-        prices.map(price =>
-          prisma.productPrice.create({
-            data: {
-              product: { connect: { id: productId } },
-              currency: { connect: { id: price.currencyId } },
-              price: price.price,
-            },
-          })
-        )
-      );
-    } catch (error) {
-      this.logger.error(`Error creating product prices: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Error creating product prices');
+      this.handlePrismaError(error, 'Error creating product');
     }
   }
 
@@ -110,61 +50,32 @@ export class ProductService {
         variants.map(async variant => {
           const createdVariant = await prisma.productVariant.create({
             data: {
-              product: { connect: { id: productId } },
-              title: variant.title,
-              sku: variant.sku,
-              imageUrl: variant.imageUrl,
-              attributes:variant.attributes,
-              inventoryQuantity: variant.inventoryQuantity,
-              weightValue: variant.weightValue,
-              weightUnit: variant.weightUnit,
-            },
+              productId,
+              ...variant,
+              prices: {
+                create: variant.prices.map(price => ({
+                  currencyId: price.currencyId,
+                  price: price.price
+                }))
+              }
+            }
           });
-
-          await this.createVariantPrices(prisma, createdVariant.id, variant.prices);
+          return createdVariant;
         })
       );
     } catch (error) {
-      this.logger.error(`Error creating product variants: ${error.message}`, error.stack);
+      this.logger.error(`Error creating variants: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Error creating product variants');
-    }
-  }
-
-  private async createVariantPrices(prisma: any, variantId: string, prices: CreateProductPriceDto[]) {
-    try {
-      await Promise.all(
-        prices.map(price =>
-          prisma.variantPrice.create({
-            data: {
-              variant: { connect: { id: variantId } },
-              currency: { connect: { id: price.currencyId } },
-              price: price.price,
-            },
-          })
-        )
-      );
-    } catch (error) {
-      this.logger.error(`Error creating variant prices: ${error.message}`, error.stack);
-      throw new InternalServerErrorException('Error creating variant prices');
     }
   }
 
   async findAll() {
     try {
       return await this.prisma.product.findMany({
-        include: {
-          categories: true,
-          collections: true,
-          prices: { include: { currency: true } },
-          variants: {
-            include: {
-              prices: { include: { currency: true } },
-            },
-          },
-        },
+        include: this.getProductIncludes(),
       });
     } catch (error) {
-      this.logger.error(`Error finding all products: ${error.message}`, error.stack);
+      this.logger.error(`Error finding products: ${error.message}`, error.stack);
       throw new InternalServerErrorException('Error retrieving products');
     }
   }
@@ -173,16 +84,7 @@ export class ProductService {
     try {
       const product = await this.prisma.product.findUnique({
         where: { id },
-        include: {
-          categories: true,
-          collections: true,
-          prices: { include: { currency: true } },
-          variants: {
-            include: {
-              prices: { include: { currency: true } },
-            },
-          },
-        },
+        include: this.getProductIncludes(),
       });
 
       if (!product) {
@@ -191,132 +93,118 @@ export class ProductService {
 
       return product;
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      this.logger.error(`Error finding product with id ${id}: ${error.message}`, error.stack);
-      throw new InternalServerErrorException(`Error retrieving product with id ${id}`);
+      this.handlePrismaError(error, `Error finding product with id ${id}`);
     }
   }
 
   async update(id: string, updateProductDto: UpdateProductDto) {
-    const { categoryIds, collectionIds, prices, variants, ...productData } = updateProductDto;
+    const { categoryIds, collectionIds, variants, ...productData } = updateProductDto;
 
     try {
       return await this.prisma.$transaction(async (prisma) => {
-        // Update the product
-        let updatedProduct;
-        try {
-          updatedProduct = await prisma.product.update({
-            where: { id },
-            data: {
-              ...productData,
-              ...(categoryIds && {
-                categories: {
-                  set: categoryIds.map(id => ({ id })),
-                },
-              }),
-              ...(collectionIds && {
-                collections: {
-                  set: collectionIds.map(id => ({ id })),
-                },
-              }),
-            },
-          });
-        } catch (error) {
-          this.handlePrismaError(error, `Error updating product with id ${id}`);
-        }
-
-        // Update product prices
-        if (prices) {
-          try {
-            await prisma.productPrice.deleteMany({ where: { productId: id } });
-            await this.createProductPrices(prisma, id, prices);
-          } catch (error) {
-            this.logger.error(`Error updating product prices: ${error.message}`, error.stack);
-            throw new InternalServerErrorException('Error updating product prices');
-          }
-        }
-
-        // Update product variants
-        if (variants) {
-          try {
-            // First, delete all variant prices
-            await prisma.variantPrice.deleteMany({
-              where: { variant: { productId: id } },
-            });
-
-            // Then, delete all variants
-            await prisma.productVariant.deleteMany({
-              where: { productId: id },
-            });
-
-            // Finally, create new variants with their prices
-            await this.createProductVariants(prisma, id, variants);
-          } catch (error) {
-            this.logger.error(`Error updating product variants: ${error.message}`, error.stack);
-            throw new InternalServerErrorException('Error updating product variants');
-          }
-        }
-
-        // Fetch the updated product with all related data
-        const refreshedProduct = await prisma.product.findUnique({
+        // Actualizar el producto
+        await prisma.product.update({
           where: { id },
-          include: {
-            categories: true,
-            collections: true,
-            prices: { include: { currency: true } },
-            variants: {
-              include: {
-                prices: { include: { currency: true } },
-              },
-            },
+          data: {
+            ...productData,
+            categories: categoryIds ? { set: categoryIds.map(id => ({ id })) } : undefined,
+            collections: collectionIds ? { set: collectionIds.map(id => ({ id })) } : undefined,
           },
         });
 
-        if (!refreshedProduct) {
-          throw new NotFoundException(`Product with ID ${id} not found after update`);
+        // Actualizar variantes
+        if (variants) {
+          await this.handleVariantUpdates(prisma, id, variants);
         }
 
-        return refreshedProduct;
+        return this.getFullProduct(prisma, id);
       });
     } catch (error) {
-      this.logger.error(`Error in update product transaction: ${error.message}`, error.stack);
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(`Error updating product with id ${id}`);
+      this.handlePrismaError(error, `Error updating product with id ${id}`);
     }
+  }
+
+  private async handleVariantUpdates(prisma: any, productId: string, variants: CreateProductVariantDto[]) {
+    // Eliminar variantes y precios existentes
+    await prisma.variantPrice.deleteMany({
+      where: { variant: { productId } }
+    });
+    
+    await prisma.productVariant.deleteMany({
+      where: { productId }
+    });
+
+    // Crear nuevas variantes
+    await this.createProductVariants(prisma, productId, variants);
   }
 
   async remove(id: string) {
     try {
       await this.prisma.$transaction(async (prisma) => {
-        await prisma.productPrice.deleteMany({ where: { productId: id } });
-        await prisma.variantPrice.deleteMany({ where: { variant: { productId: id } } });
-        await prisma.productVariant.deleteMany({ where: { productId: id } });
-        await prisma.product.delete({ where: { id } });
+        // Eliminar precios de variantes primero
+        await prisma.variantPrice.deleteMany({
+          where: { variant: { productId: id } }
+        });
+
+        // Eliminar variantes
+        await prisma.productVariant.deleteMany({
+          where: { productId: id }
+        });
+
+        // Finalmente eliminar el producto
+        await prisma.product.delete({
+          where: { id }
+        });
       });
     } catch (error) {
       this.handlePrismaError(error, `Error deleting product with id ${id}`);
     }
   }
 
-  private handlePrismaError(error: any, message: string) {
-    this.logger.error(`${message}: ${error.message}`, error.stack);
-    if (error.code) {
-      switch (error.code) {
-        case 'P2002':
-          throw new ConflictException('A product with this slug already exists');
-        case 'P2025':
-          throw new NotFoundException(`Related entity not found. Please check your input.`);
-        case 'P2003':
-          throw new BadRequestException('Invalid foreign key constraint. Please check your input.');
-        default:
-          throw new InternalServerErrorException(message);
+  private getProductIncludes() {
+    return {
+      categories: true,
+      collections: true,
+      variants: {
+        include: {
+          prices: {
+            include: {
+              currency: true
+            }
+          }
+        }
       }
+    };
+  }
+
+  private async getFullProduct(prisma: any, productId: string) {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: this.getProductIncludes(),
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${productId} not found`);
     }
-    throw new InternalServerErrorException(message);
+
+    return product;
+  }
+
+  private handlePrismaError(error: any, contextMessage: string) {
+    this.logger.error(`${contextMessage}: ${error.message}`, error.stack);
+    
+    if (error.code === 'P2002') {
+      throw new ConflictException('Product with this slug already exists');
+    }
+    
+    if (error.code === 'P2025') {
+      throw new NotFoundException(error.meta?.cause || 'Resource not found');
+    }
+
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+
+    throw new InternalServerErrorException(contextMessage);
   }
 }
-

@@ -13,7 +13,7 @@ import {
 import { Type } from "class-transformer"
 import { ProductStatus } from "@prisma/client"
 
-export class CreateProductPriceDto {
+export class CreatePriceDto {
   @IsUUID()
   currencyId: string
 
@@ -43,14 +43,13 @@ export class CreateProductVariantDto {
   @Min(0)
   weightValue?: number
 
-  @IsOptional()
-  @IsString()
-  weightUnit?: string
+ 
 
   @ValidateNested({ each: true })
-  @Type(() => CreateProductPriceDto)
-  prices: CreateProductPriceDto[]
+  @Type(() => CreatePriceDto)
+  prices: CreatePriceDto[]
 
+ 
   @IsJSON()
   attributes: Record<string, any>
 
@@ -108,20 +107,15 @@ export class CreateProductDto {
   @Min(0)
   weightValue?: number
 
-  @IsOptional()
-  @IsString()
-  weightUnit?: string
-
-  @ValidateNested({ each: true })
-  @Type(() => CreateProductPriceDto)
-  prices: CreateProductPriceDto[]
-
   @ValidateNested({ each: true })
   @Type(() => CreateProductVariantDto)
   variants: CreateProductVariantDto[]
 
   @IsBoolean()
   isArchived: boolean
+
+  @IsBoolean()
+  allowBackorder: boolean
 
   @IsOptional()
   @IsString()
@@ -130,5 +124,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   metaDescription?: string
+
+
+  @IsJSON()
+  fbt: Record<string, any>
 }
 

@@ -1,5 +1,6 @@
 import { IsString, IsNumber, IsOptional, IsUUID, IsJSON } from "class-validator"
 import { Type } from "class-transformer"
+import { PaymentStatus } from "@prisma/client"
 
 export class CreatePaymentTransactionDto {
   @IsUUID()
@@ -16,7 +17,7 @@ export class CreatePaymentTransactionDto {
   currencyId: string
 
   @IsString()
-  status: string
+  status: PaymentStatus
 
   @IsOptional()
   @IsString()

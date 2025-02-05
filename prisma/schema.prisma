@@ -215,13 +215,11 @@ model Product {
   vendor            String?         // Vendor or brand of the product
   fbt               Json?           // frecuently bought together
   allowBackorder    Boolean       @default(false) 
-  // prices            ProductPrice[]  // Prices of the product in different currencies
   status            ProductStatus   @default(DRAFT) // Current status of the product
   categories        Category[]      // Categories the product belongs to
   variants          ProductVariant[] // Variants of the product
   imageUrls         String[]        // URLs of the product images
   collections       Collection[]    // Collections the product belongs to
-  isArchived        Boolean         @default(false) // Whether the product is archived
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   metaTitle         String?         // Meta title for SEO
@@ -240,6 +238,7 @@ model ProductVariant {
   productId         String        // ID of the parent product
   title             String        // Title of the variant
   sku               String?       // Stock Keeping Unit for the variant
+  isActive          Boolean       @default(true)
   attributes        Json?         // JSON object containing variant attributes
   imageUrl          String?       // URL of the variant's image
   prices            VariantPrice[] // Prices of the variant in different currencies

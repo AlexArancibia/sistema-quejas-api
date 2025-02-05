@@ -32,6 +32,10 @@ export class CreateProductVariantDto {
 
   @IsOptional()
   @IsString()
+  isActive?: boolean
+
+  @IsOptional()
+  @IsString()
   imageUrl?: string
 
   @IsNumber()
@@ -110,9 +114,6 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => CreateProductVariantDto)
   variants: CreateProductVariantDto[]
-
-  @IsBoolean()
-  isArchived: boolean
 
   @IsBoolean()
   allowBackorder: boolean

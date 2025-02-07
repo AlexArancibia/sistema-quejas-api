@@ -1,4 +1,13 @@
-import { IsString, IsNumber, IsOptional, IsBoolean, Min } from "class-validator"
+import { IsString, IsOptional, IsBoolean, ValidateNested, IsArray, IsNumber } from "class-validator"
+import { Type } from "class-transformer"
+
+class CreateShippingMethodPriceDto {
+  @IsString()
+  currencyId: string
+
+  @IsNumber()
+  price: number
+}
 
 export class CreateShippingMethodDto {
   @IsString()
@@ -8,9 +17,10 @@ export class CreateShippingMethodDto {
   @IsString()
   description?: string
 
-  @IsNumber()
-  @Min(0)
-  price: number
+  @ValidateNested({ each: true })
+  @Type(() => CreateShippingMethodPriceDto)
+  @IsArray()
+  prices: CreateShippingMethodPriceDto[]
 
   @IsOptional()
   @IsString()

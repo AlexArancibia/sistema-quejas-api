@@ -7,45 +7,70 @@ import { PrismaService } from 'src/prisma/prisma.service';
 export class ShippingMethodsService {
   constructor(private readonly prisma: PrismaService) {}
   async create(createShippingMethodDto: CreateShippingMethodDto) {
+    const { prices, ...shippingMethodData } = createShippingMethodDto
+
     return this.prisma.shippingMethod.create({
-      data: createShippingMethodDto,
+      data: {
+        ...shippingMethodData,
+        prices: {
+          create: prices,
+        },
+      },
+      include: {
+        prices: true,
+      },
     })
   }
 
-  async findAll() {
-    return this.prisma.shippingMethod.findMany()
+  findAll() {
+    return this.prisma.shippingMethod.findMany({
+      include: {
+        prices: true,
+      },
+    })
   }
 
-  async findOne(id: string) {
-    const shippingMethod = await this.prisma.shippingMethod.findUnique({
+  findOne(id: string) {
+    return this.prisma.shippingMethod.findUnique({
       where: { id },
+      include: {
+        prices: true,
+      },
     })
-
-    if (!shippingMethod) {
-      throw new NotFoundException(`Shipping method with ID ${id} not found`)
-    }
-
-    return shippingMethod
   }
 
   async update(id: string, updateShippingMethodDto: UpdateShippingMethodDto) {
-    try {
-      return await this.prisma.shippingMethod.update({
-        where: { id },
-        data: updateShippingMethodDto,
-      })
-    } catch (error) {
-      throw new NotFoundException(`Shipping method with ID ${id} not found`)
-    }
+    const { prices, ...shippingMethodData } = updateShippingMethodDto
+
+    return this.prisma.shippingMethod.update({
+      where: { id },
+      data: {
+        ...shippingMethodData,
+        prices: prices
+          ? {
+              upsert: prices.map((price) => ({
+                where: {
+                  shippingMethodId_currencyId: {
+                    shippingMethodId: id,
+                    currencyId: price.currencyId,
+                  },
+                },
+                create: price,
+                update: price,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        prices: true,
+      },
+    })
   }
 
-  async remove(id: string) {
-    try {
-      return await this.prisma.shippingMethod.delete({
-        where: { id },
-      })
-    } catch (error) {
-      throw new NotFoundException(`Shipping method with ID ${id} not found`)
-    }
+  remove(id: string) {
+    return this.prisma.shippingMethod.delete({
+      where: { id },
+    })
   }
 }
+

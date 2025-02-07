@@ -22,7 +22,7 @@ export class ShippingMethodsService {
     })
   }
 
-  findAll() {
+  async findAll() {
     return this.prisma.shippingMethod.findMany({
       include: {
         prices: true,
@@ -30,7 +30,7 @@ export class ShippingMethodsService {
     })
   }
 
-  findOne(id: string) {
+  async findOne(id: string) {
     return this.prisma.shippingMethod.findUnique({
       where: { id },
       include: {
@@ -67,7 +67,13 @@ export class ShippingMethodsService {
     })
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    // First, delete all associated ShippingMethodPrice records
+    await this.prisma.shippingMethodPrice.deleteMany({
+      where: { shippingMethodId: id },
+    })
+
+    // Then, delete the ShippingMethod
     return this.prisma.shippingMethod.delete({
       where: { id },
     })

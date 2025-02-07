@@ -320,8 +320,8 @@ model Order {
   preferredDeliveryDate DateTime?          // Customer's preferred delivery date
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
-
-  PaymentTransaction PaymentTransaction[]
+  customerMetadata  Json?                 
+  paymentTransaction PaymentTransaction[]
 
   @@index([orderNumber, customerId, financialStatus, fulfillmentStatus])
 }
@@ -434,24 +434,6 @@ model ShippingMethodPrice {
 }
 
  
-model Content {
-  id          String      @id @default(dbgenerated("'cont_' || substr(gen_random_uuid()::text, 1, 13)"))
-  title       String      // Title of the content
-  slug        String      @unique // URL-friendly version of the title
-  body        String      // Main content of the page, blog post, news article, etc.
-  type        ContentType // Type of content
-  author      String?     // Author of the content
-  published   Boolean     @default(false) // Whether the content is published
-  publishedAt DateTime?   // Date when the content was published
-  featuredImage String?   // URL of the featured image
-  excerpt     String?     // Short excerpt or summary of the content
-  metaTitle   String?     // Meta title for SEO
-  metaDescription String? // Meta description for SEO
-  tags        String[]    // Tags associated with the content
-  category    String?     // Category of the content (e.g., for blog posts)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
 
 // Model for payment providers
 model PaymentProvider {
@@ -520,6 +502,26 @@ model PaymentTransaction {
   metadata          Json?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+
+model Content {
+  id          String      @id @default(dbgenerated("'cont_' || substr(gen_random_uuid()::text, 1, 13)"))
+  title       String      // Title of the content
+  slug        String      @unique // URL-friendly version of the title
+  body        String      // Main content of the page, blog post, news article, etc.
+  type        ContentType // Type of content
+  author      String?     // Author of the content
+  published   Boolean     @default(false) // Whether the content is published
+  publishedAt DateTime?   // Date when the content was published
+  featuredImage String?   // URL of the featured image
+  excerpt     String?     // Short excerpt or summary of the content
+  metaTitle   String?     // Meta title for SEO
+  metaDescription String? // Meta description for SEO
+  tags        String[]    // Tags associated with the content
+  category    String?     // Category of the content (e.g., for blog posts)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 

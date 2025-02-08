@@ -14,36 +14,38 @@ export class CustomerService {
   ) {}
 
   async create(createCustomerDto: CreateCustomerDto) {
-    const { addresses, ...customerData } = createCustomerDto
-    const hashedPassword = await encrypt(customerData.password)
-
+    const { addresses, password, ...customerData } = createCustomerDto
+  
+    const hashedPassword = password ? await encrypt(password) : null // Solo encripta si hay contraseña
+  
     return this.prisma.$transaction(async (prisma) => {
       const customerCreateData: any = {
         ...customerData,
-        password: hashedPassword,
+        ...(hashedPassword && { password: hashedPassword }), // Solo agrega password si existe
       }
-
+  
       if (addresses && addresses.length > 0) {
         customerCreateData.addresses = {
           create: addresses.map((address, index) => ({
             ...address,
-            isDefault: index === 0, // Set the first address as default
+            isDefault: index === 0, // Establece la primera dirección como predeterminada
           })),
         }
       }
-
+  
       const customer = await prisma.customer.create({
         data: customerCreateData,
         include: {
           addresses: true,
         },
       })
-
-      // Remove password from the returned object
+  
+      // Elimina la contraseña del objeto de respuesta
       const { password, ...customerWithoutPassword } = customer
       return customerWithoutPassword
     })
   }
+  
 
   async login(loginCustomerDto: LoginCustomerDto) {
     try {

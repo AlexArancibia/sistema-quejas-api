@@ -268,7 +268,7 @@ model VariantPrice {
 // Model for customers
 model Customer {
   id               String            @id @default(dbgenerated("'cu_' || substr(gen_random_uuid()::text, 1, 13)"))
-  email            String            @unique // Email address of the customer
+  email            String?            @unique // Email address of the customer
   firstName        String?           // First name of the customer
   lastName         String?           // Last name of the customer
   phone            String?           // Phone number of the customer
@@ -278,6 +278,7 @@ model Customer {
   addresses        Address[] // Addresses associated with this customer
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
+  extrainfo        Json?               
 }
 
 // Model for orders

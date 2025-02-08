@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsBoolean, ValidateNested, IsArray } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsBoolean, ValidateNested, IsArray, IsJSON } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class CreateAddressDto {
@@ -42,9 +42,11 @@ class CreateAddressDto {
 }
 
 export class CreateCustomerDto {
+  @IsOptional()
   @IsEmail()
   email: string
-
+  
+  @IsOptional()
   @IsString()
   password: string
 
@@ -69,4 +71,7 @@ export class CreateCustomerDto {
   @ValidateNested({ each: true })
   @Type(() => CreateAddressDto)
   addresses?: CreateAddressDto[]
+
+  @IsJSON()
+  extrainfo: Record<string, any>
 }

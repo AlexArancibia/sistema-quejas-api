@@ -1,4 +1,12 @@
-import { IsString, IsOptional, IsEmail, IsBoolean, IsUUID } from 'class-validator';
+import { 
+  IsString, 
+  IsOptional, 
+  IsEmail, 
+  IsBoolean, 
+  IsUUID, 
+  IsDecimal, 
+  IsUrl 
+} from 'class-validator';
 
 export class CreateShopDto {
   @IsString()
@@ -14,6 +22,14 @@ export class CreateShopDto {
   @IsOptional()
   @IsString()
   shopOwner?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsString()
+  logo?: string;
 
   @IsOptional()
   @IsString()
@@ -55,6 +71,10 @@ export class CreateShopDto {
   defaultCurrencyId: string;
 
   @IsOptional()
+  @IsBoolean()
+  multiCurrencyEnabled?: boolean;
+
+  @IsOptional()
   @IsString()
   timezone?: string;
 
@@ -67,6 +87,82 @@ export class CreateShopDto {
   taxesIncluded?: boolean;
 
   @IsOptional()
-  taxValue: number;
-}
+  @IsDecimal()
+  taxValue?: number;
 
+  @IsOptional()
+  @IsString()
+  shippingZones?: string;
+
+  @IsOptional()
+  @IsDecimal()
+  defaultShippingRate?: number;
+
+  @IsOptional()
+  @IsDecimal()
+  freeShippingThreshold?: number;
+
+  @IsOptional()
+  @IsString()
+  primaryColor?: string;
+
+  @IsOptional()
+  @IsString()
+  secondaryColor?: string;
+
+  @IsOptional()
+  @IsString()
+  theme?: string;
+
+  @IsOptional()
+  @IsUrl()
+  facebookUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  instagramUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  twitterUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  tiktokUrl?: string;
+
+  @IsOptional()
+  @IsUrl()
+  youtubeUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  googleAnalyticsId?: string;
+
+  @IsOptional()
+  @IsString()
+  facebookPixelId?: string;
+
+  @IsOptional()
+  @IsEmail()
+  supportEmail?: string;
+
+  @IsOptional()
+  @IsString()
+  supportPhone?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  liveChatEnabled?: boolean;
+
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  maintenanceMode?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  multiLanguageEnabled?: boolean;
+}

@@ -119,31 +119,74 @@ enum PaymentStatus {
 
 // Model for storing shop-wide settings
 model ShopSettings {
-  id                String           @id @default(dbgenerated("'shop_' || substr(gen_random_uuid()::text, 1, 13)"))
-  name              String           // Name of the shop
-  domain            String           @unique // Domain of the shop's website
-  email             String?          // Contact email for the shop
-  shopOwner         String?          // Name of the shop owner
-  address1          String?          // First line of the shop's address
-  address2          String?          // Second line of the shop's address
-  city              String?          // City where the shop is located
-  province          String?          // Province or state where the shop is located
-  provinceCode      String?          // Code of the province or state
-  country           String?          // Country where the shop is located
-  countryCode       String?          // Code of the country
-  zip               String?          // Zip or postal code of the shop
-  phone             String?          // Contact phone number for the shop
-  defaultCurrency   Currency         @relation("DefaultCurrency", fields: [defaultCurrencyId], references: [id])
-  defaultCurrencyId String           @unique // Default currency used by the shop
-  acceptedCurrencies Currency[]      @relation("AcceptedCurrencies") // Currencies accepted by the shop
-  timezone          String?          // Timezone of the shop
-  weightUnit        String?          // Unit used for weight measurements
-  taxesIncluded     Boolean          @default(false) // Whether prices include taxes
-  taxValue          Decimal
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  id                  String           @id @default(dbgenerated("'shop_' || substr(gen_random_uuid()::text, 1, 13)"))
+  name                String           // Name of the shop
+  domain              String           @unique // Domain of the shop's website
+  email               String?          // Contact email for the shop
+  shopOwner           String?          // Name of the shop owner
+  logo                String?          // URL of the shop's logo
+  description         String?          // Short description of the shop
+  address1            String?          // First line of the shop's address
+  address2            String?          // Second line of the shop's address
+  city                String?          // City where the shop is located
+  province            String?          // Province or state where the shop is located
+  provinceCode        String?          // Code of the province or state
+  country             String?          // Country where the shop is located
+  countryCode         String?          // Code of the country
+  zip                 String?          // Zip or postal code of the shop
+  phone               String?          // Contact phone number for the shop
+  
+  // Currency Settings
+  defaultCurrency     Currency         @relation("DefaultCurrency", fields: [defaultCurrencyId], references: [id])
+  defaultCurrencyId   String           @unique // Default currency used by the shop
+  acceptedCurrencies  Currency[]       @relation("AcceptedCurrencies") // Currencies accepted by the shop
+  multiCurrencyEnabled Boolean         @default(false) // Whether multiple currencies are supported
 
-  Currency Currency[] @relation("BaseCurrency") // Currencies for which this shop is the base
+  // Shipping Settings
+  shippingZones       String?          // Regions where the shop ships
+  defaultShippingRate Decimal?         // Default shipping rate
+  freeShippingThreshold Decimal?       // Minimum order amount for free shipping
+
+  // Tax Settings
+  taxesIncluded       Boolean          @default(false) // Whether prices include taxes
+  taxValue            Decimal          // Default tax value
+
+  // Timezone & Measurement Settings
+  timezone            String?          // Timezone of the shop
+  weightUnit          String?          // Unit used for weight measurements
+
+  // Branding & Theme
+  primaryColor        String?          // Primary color code for branding
+  secondaryColor      String?          // Secondary color code for branding
+  theme               String?          // Shop's selected theme
+
+  // Social Media
+  facebookUrl         String?          // Facebook page URL
+  instagramUrl        String?          // Instagram profile URL
+  twitterUrl          String?          // Twitter profile URL
+  tiktokUrl           String?          // TikTok profile URL
+  youtubeUrl          String?          // YouTube channel URL
+
+  // Analytics & Tracking
+  googleAnalyticsId   String?          // Google Analytics tracking ID
+  facebookPixelId     String?          // Facebook Pixel tracking ID
+
+  // Support & Customer Service
+  supportEmail        String?          // Support email address
+  supportPhone        String?          // Support phone number
+  liveChatEnabled     Boolean          @default(false) // Whether live chat is enabled
+
+  // Status & Advanced Settings
+  status              String           @default("active") // Shop status: active, inactive, suspended
+  maintenanceMode     Boolean          @default(false) // Whether the shop is in maintenance mode
+  multiLanguageEnabled Boolean         @default(false) // Whether multiple languages are supported
+
+  // Timestamps
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  // Relations
+  Currency            Currency[]       @relation("BaseCurrency") // Currencies for which this shop is the base
 }
 
 // Model for currencies supported by the shop

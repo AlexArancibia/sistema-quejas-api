@@ -149,7 +149,7 @@ model ShopSettings {
 
   // Tax Settings
   taxesIncluded       Boolean          @default(false) // Whether prices include taxes
-  taxValue            Decimal          // Default tax value
+  taxValue            Decimal?          // Default tax value
 
   // Timezone & Measurement Settings
   timezone            String?          // Timezone of the shop

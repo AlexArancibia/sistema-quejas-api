@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsDate, IsNumber, IsJSON } from "class-validator"
+import { IsString, IsOptional, IsBoolean, IsDate, IsUrl, IsJSON } from "class-validator"
 import { Type } from "class-transformer"
 
 export class CreateHeroSectionDto {
@@ -10,11 +10,11 @@ export class CreateHeroSectionDto {
   subtitle?: string
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   backgroundImage?: string
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   mobileBackgroundImage?: string
 
   @IsOptional()
@@ -26,20 +26,8 @@ export class CreateHeroSectionDto {
   buttonLink?: string
 
   @IsOptional()
-  @IsString()
-  alignment?: string
-
-  @IsOptional()
-  @IsString()
-  textColor?: string
-
-  @IsOptional()
-  @IsString()
-  backgroundColor?: string
-
-  @IsOptional()
-  @IsNumber()
-  overlayOpacity?: number
+  @IsJSON()
+  styles?: Record<string, any>
 
   @IsOptional()
   @IsBoolean()
@@ -54,9 +42,5 @@ export class CreateHeroSectionDto {
   @IsDate()
   @Type(() => Date)
   endDate?: Date
-
-  @IsOptional()
-  @IsJSON()
-  customFields?: Record<string, any>
 }
 

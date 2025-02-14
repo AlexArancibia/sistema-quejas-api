@@ -19,9 +19,13 @@ import { PaymentProvidersModule } from './payment-providers/payment-providers.mo
 import { PaymentTransactionModule } from './payment-transaction/payment-transaction.module';
 import { CouponModule } from './coupon/coupon.module';
 import { RefundModule } from './refund/refund.module';
-import { PostModule } from './post/post.module';
-import { HeroSectionModule } from './hero-section/hero-section.module';
+ 
 import { OrderModule } from './order/order.module';
+import { ContentModule } from './content/content.module';
+import { HeroSectionModule } from './hero-section/hero-section.module';
+import { ConfigModule } from '@nestjs/config';
+import { EmailModule } from './email/email.module';
+
  
  
 
@@ -66,11 +70,31 @@ import { OrderModule } from './order/order.module';
  
     RefundModule,
  
-    PostModule,
+ 
+ 
+    OrderModule,
+ 
+ 
+ 
+    ContentModule,
+ 
+ 
  
     HeroSectionModule,
  
-    OrderModule,
+ 
+ 
+
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: ".env",
+    }),
+ 
+ 
+ 
+
+    EmailModule,
+
  
   ],
 })

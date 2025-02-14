@@ -92,9 +92,12 @@ enum ShippingMethodType {
 }
 
 enum ContentType {
+  ARTICLE
+  BLOG
   PAGE
-  BLOG_POST
+  NEWS
 }
+
 
 enum UserRole {
   ADMIN
@@ -527,7 +530,7 @@ model User {
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
 
-  Post Post[]
+  posts     Content[]
 }
 
 model PaymentTransaction {
@@ -548,85 +551,33 @@ model PaymentTransaction {
   updatedAt         DateTime @updatedAt
 }
 
-
-model Content {
-  id          String      @id @default(dbgenerated("'cont_' || substr(gen_random_uuid()::text, 1, 13)"))
-  title       String      // Title of the content
-  slug        String      @unique // URL-friendly version of the title
-  body        String      // Main content of the page, blog post, news article, etc.
-  type        ContentType // Type of content
-  author      String?     // Author of the content
-  published   Boolean     @default(false) // Whether the content is published
-  publishedAt DateTime?   // Date when the content was published
-  featuredImage String?   // URL of the featured image
-  excerpt     String?     // Short excerpt or summary of the content
-  metaTitle   String?     // Meta title for SEO
-  metaDescription String? // Meta description for SEO
-  tags        String[]    // Tags associated with the content
-  category    String?     // Category of the content (e.g., for blog posts)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
-
-
-model Post {
-  id                String       @id @default(dbgenerated("'post_' || substr(gen_random_uuid()::text, 1, 13)"))
-  title             String
-  slug              String       @unique
-  type              PostType
-  status            PostStatus   @default(DRAFT)
-  content           Json         // Structured content as JSON
-  author            User         @relation(fields: [authorId], references: [id])
-  authorId          String
-  publishedAt       DateTime?
-  featuredImage     String?      // URL of the featured image
-  metaTitle         String?
-  metaDescription   String?
-  keywords          String[]
-  postCategories    PostCategory[]
-  tags              Tag[]
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-}
-
-model HeroSection {
-  id                String       @id @default(dbgenerated("'hero_' || substr(gen_random_uuid()::text, 1, 13)"))
-  title             String
-  subtitle          String?
-  backgroundImage   String?      // URL of the background image
-  mobileBackgroundImage String?  
-  buttonText        String?
-  buttonLink        String?
-  alignment         String?      // e.g., "left", "center", "right"
-  textColor         String?
-  backgroundColor   String?
-  overlayOpacity    Float?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  isActive          Boolean      @default(true)
-  startDate         DateTime?    // When to start showing this hero section
-  endDate           DateTime?    // When to stop showing this hero section
-  customFields      Json?        // For any additional, custom data
-}
-
-model PostCategory {
-  id          String    @id @default(dbgenerated("'pcat_' || substr(gen_random_uuid()::text, 1, 13)"))
-  name        String
+  model Content {
+  id          String    @id @default(dbgenerated("'cnt_' || substr(gen_random_uuid()::text, 1, 13)"))
+  title       String
   slug        String    @unique
-  description String?
-  parentId    String?
-  parent      PostCategory? @relation("PostCategoryHierarchy", fields: [parentId], references: [id])
-  children    PostCategory[] @relation("PostCategoryHierarchy")
-  posts       Post[]
+  body        String?
+  type        ContentType
+  authorId    String?
+  author      User?     @relation(fields: [authorId], references: [id])
+  published   Boolean   @default(false)
+  publishedAt DateTime?
+  featuredImage String?
+  metadata    Json?     // SEO metadata, tags, categories, etc.
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
-
-model Tag {
-  id        String   @id @default(dbgenerated("'tag_' || substr(gen_random_uuid()::text, 1, 13)"))
-  name      String   @unique
-  slug      String   @unique
-  posts     Post[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+ 
+model HeroSection {
+  id                String   @id @default(dbgenerated("'hero_' || substr(gen_random_uuid()::text, 1, 13)"))
+  title             String
+  subtitle          String?
+  backgroundImage   String?
+  mobileBackgroundImage String?
+  buttonText        String?
+  buttonLink        String?
+  styles            Json?     // Stores alignment, colors, opacity, etc.
+  metadata          Json?     // SEO metadata, tags, categories, etc.
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

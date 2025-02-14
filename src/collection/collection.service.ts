@@ -76,12 +76,31 @@ export class CollectionService {
   }
 
   async update(id: string, updateCollectionDto: UpdateCollectionDto) {
+    const { productIds, ...updateData } = updateCollectionDto;
+
     try {
-      return await this.prisma.collection.update({
+      const updatedCollection = await this.prisma.collection.update({
         where: { id },
-        data: updateCollectionDto,
+        data: {
+          ...updateData,
+          products: productIds ? {
+            set: productIds.map(id => ({ id })),
+          } : undefined,
+        },
+        include: {
+          products: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+            },
+          },
+        },
       });
+
+      return updatedCollection;
     } catch (error) {
+      console.error('Error updating collection:', error);
       throw new NotFoundException(`Collection with ID ${id} not found`);
     }
   }

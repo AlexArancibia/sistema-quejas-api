@@ -70,7 +70,9 @@ export class CustomerService {
       if (error instanceof UnauthorizedException) {
         throw error
       }
-      throw new InternalServerErrorException("Error al hacer login")
+      console.log(error)
+      throw new InternalServerErrorException("Error al hacer login",error)
+      
     }
   }
 

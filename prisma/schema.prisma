@@ -261,6 +261,7 @@ model Product {
   vendor            String?         // Vendor or brand of the product
   fbt               Json?           // frecuently bought together
   allowBackorder    Boolean       @default(false) 
+  releaseDate       DateTime?
   status            ProductStatus   @default(DRAFT) // Current status of the product
   categories        Category[]      // Categories the product belongs to
   variants          ProductVariant[] // Variants of the product
@@ -317,7 +318,7 @@ model Customer {
   email            String?            @unique // Email address of the customer
   firstName        String?           // First name of the customer
   lastName         String?           // Last name of the customer
-  phone            String?           // Phone number of the customer
+  phone            String?           // CAMBIAR A INT
   password         String?            // Hashed password of the customer
   acceptsMarketing Boolean           @default(false) // Whether the customer accepts marketing emails
   orders           Order[]           // Orders placed by this customer

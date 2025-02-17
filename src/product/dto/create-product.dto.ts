@@ -9,6 +9,7 @@ import {
   Min,
   IsJSON,
   IsBoolean,
+  IsDateString,
 } from "class-validator"
 import { Type } from "class-transformer"
 import { ProductStatus } from "@prisma/client"
@@ -126,6 +127,9 @@ export class CreateProductDto {
   @IsString()
   metaDescription?: string
 
+  @IsOptional()
+  @IsDateString()
+  releaseDate?: string
 
   @IsJSON()
   fbt: Record<string, any>

@@ -25,7 +25,11 @@ export class ShippingMethodsService {
   async findAll() {
     return this.prisma.shippingMethod.findMany({
       include: {
-        prices: true,
+        prices: {
+          include: {
+            currency: true, // Agrega la relación con Currency
+          },
+        },
       },
     })
   }
@@ -34,10 +38,15 @@ export class ShippingMethodsService {
     return this.prisma.shippingMethod.findUnique({
       where: { id },
       include: {
-        prices: true,
+        prices: {
+          include: {
+            currency: true, // Agrega la relación con Currency
+          },
+        },
       },
-    })
+    });
   }
+  
 
   async update(id: string, updateShippingMethodDto: UpdateShippingMethodDto) {
     const { prices, ...shippingMethodData } = updateShippingMethodDto

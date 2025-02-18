@@ -1,9 +1,12 @@
 import { IsString, IsOptional, IsBoolean, ValidateNested, IsArray, IsNumber } from "class-validator"
 import { Type } from "class-transformer"
+import { Currency } from "@prisma/client"
 
 class CreateShippingMethodPriceDto {
   @IsString()
   currencyId: string
+
+  
 
   @IsNumber()
   price: number

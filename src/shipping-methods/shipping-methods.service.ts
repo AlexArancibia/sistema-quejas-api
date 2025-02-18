@@ -49,8 +49,8 @@ export class ShippingMethodsService {
   
 
   async update(id: string, updateShippingMethodDto: UpdateShippingMethodDto) {
-    const { prices, ...shippingMethodData } = updateShippingMethodDto
-
+    const { prices, ...shippingMethodData } = updateShippingMethodDto;
+  
     return this.prisma.shippingMethod.update({
       where: { id },
       data: {
@@ -71,10 +71,15 @@ export class ShippingMethodsService {
           : undefined,
       },
       include: {
-        prices: true,
+        prices: {
+          include: {
+            currency: true, // Agrega la relación con Currency
+          },
+        },
       },
-    })
+    });
   }
+  
 
   async remove(id: string) {
     // First, delete all associated ShippingMethodPrice records

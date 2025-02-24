@@ -448,6 +448,7 @@ model Collection {
   products    Product[] // Products in this collection
   imageUrl    String?   // URL of the collection's image
   createdAt   DateTime  @default(now())
+  isFeatured  Boolean   @default(false)
   updatedAt   DateTime  @updatedAt
   metaTitle   String?   // Meta title for SEO
   metaDescription String? // Meta description for SEO

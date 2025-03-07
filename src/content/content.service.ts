@@ -13,13 +13,16 @@ export class ContentService {
   }
 
   findAll() {
-    return this.prisma.content.findMany()
+    return this.prisma.content.findMany({
+      include: { author: true }, // Incluir información del autor
+    });
   }
 
   findOne(id: string) {
     return this.prisma.content.findUnique({
       where: { id },
-    })
+      include: { author: true }, // Incluir información del autor
+    });
   }
 
   update(id: string, updateContentDto: UpdateContentDto) {

@@ -20,6 +20,12 @@ export class CreateContentDto {
   @IsString()
   authorId?: string
 
+  
+  @IsOptional()
+  @IsString()
+  category?: string
+  
+
   @IsOptional()
   @IsBoolean()
   published?: boolean

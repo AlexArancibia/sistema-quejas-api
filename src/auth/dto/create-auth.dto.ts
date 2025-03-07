@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsEnum } from 'class-validator';
+import { IsString, IsEmail, IsEnum, IsOptional, IsUrl } from 'class-validator';
 import { UserRole } from '@prisma/client';  // Asegúrate de que el tipo UserRole está importado correctamente
 
 export class CreateUserDto {
@@ -13,6 +13,10 @@ export class CreateUserDto {
 
   @IsString()
   lastName: string;
+
+  @IsOptional()
+  @IsUrl()
+  featuredImage?: string
 
   @IsEnum(UserRole)
   role: UserRole;  // Validación para asegurarse de que el rol es uno de los valores definidos en el enum UserRole

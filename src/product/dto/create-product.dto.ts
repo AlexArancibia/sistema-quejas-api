@@ -21,6 +21,11 @@ export class CreatePriceDto {
   @IsNumber()
   @Min(0)
   price: number
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  originalPrice?: number
 }
 
 export class CreateProductVariantDto {

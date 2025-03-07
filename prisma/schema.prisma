@@ -289,7 +289,6 @@ model ProductVariant {
   attributes        Json?         // JSON object containing variant attributes
   imageUrl          String?       // URL of the variant's image
   prices            VariantPrice[] // Prices of the variant in different currencies
-  compareAtPrice    Decimal?      // Original price for comparison (e.g., for sales)
   inventoryQuantity Int           @default(0) // Available quantity of this variant
   weightValue       Decimal?      // Weight of the variant
   position          Int           @default(1) // Position of the variant in the list
@@ -306,6 +305,7 @@ model VariantPrice {
   currency   Currency       @relation(fields: [currencyId], references: [id])
   currencyId String         // ID of the currency for this price
   price      Decimal        // Price value
+  originalPrice Decimal?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
 
@@ -526,6 +526,7 @@ model User {
   id           String      @id @default(dbgenerated("'user_' || substr(gen_random_uuid()::text, 1, 13)"))
   email        String      @unique // Email address of the user
   password     String      // Hashed password
+  image        String?
   firstName    String      // First name of the user
   lastName     String      // Last name of the user
   role         UserRole    // Role of the user in the system
@@ -561,6 +562,7 @@ model PaymentTransaction {
   type        ContentType
   authorId    String?
   author      User?     @relation(fields: [authorId], references: [id])
+  category    String?
   published   Boolean   @default(false)
   publishedAt DateTime?
   featuredImage String?

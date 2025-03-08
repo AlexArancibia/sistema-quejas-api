@@ -74,9 +74,9 @@ enum FulfillmentStatus {
 }
 
 enum PaymentProviderType {
-  CREDIT_CARD
   PAYPAL
   STRIPE
+  MERCADOPAGO
   BANK_TRANSFER
   CASH_ON_DELIVERY
   OTHER

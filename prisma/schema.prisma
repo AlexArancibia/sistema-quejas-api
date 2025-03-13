@@ -64,14 +64,6 @@ enum DiscountType {
   FREE_SHIPPING
 }
 
-enum FulfillmentStatus {
-  PENDING
-  OPEN
-  SUCCESS
-  CANCELLED
-  ERROR
-  FAILURE
-}
 
 enum PaymentProviderType {
   PAYPAL

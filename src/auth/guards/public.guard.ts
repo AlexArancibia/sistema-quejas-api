@@ -20,20 +20,19 @@ export class PublicKeyGuard implements CanActivate {
     }
 
     // Intentar validación con JWT
-    try {
-      const payload = await this.jwtService.verifyAsync(token, {
-        secret: process.env.SECRET,
-      });
+    const secrets = [process.env.CUSTOMER_JWT_SECRET, process.env.SECRET];
 
-      // Puedes realizar validaciones adicionales sobre `payload` aquí, si es necesario
-      console.log({ payload });
-
-      return true; // JWT válido
-    } catch (error) {
-      throw new UnauthorizedException("Invalid token");
+    for (const secret of secrets) {
+      try {
+        await this.jwtService.verifyAsync(token, { secret });
+        return true; // Token is valid
+      } catch {
+        // Continue to the next secret if verification fails
+      }
     }
-  }
 
+    throw new UnauthorizedException("Invalid token");
+  }
   private extractToken(request: Request): string | undefined {
     const [type, token] = (request.headers.authorization?.split(" ") ?? []);
     return type === "Bearer" ? token : undefined; // Asegurar que sea un Bearer token

@@ -4,16 +4,17 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { OrderFinancialStatus, OrderFulfillmentStatus } from '@prisma/client';
 import { CustomerAuthGuard } from 'src/customer/guards/customer.guard';
-@UseGuards(CustomerAuthGuard)
+import { PublicKeyGuard } from 'src/auth/guards/public.guard';
+
 @Controller('order')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
-
+  @UseGuards(PublicKeyGuard)
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
     return this.orderService.create(createOrderDto);
   }
-
+  @UseGuards(CustomerAuthGuard)
   @Get()
   findAll(
     @Query('financialStatus') financialStatus?: OrderFinancialStatus,
@@ -22,17 +23,17 @@ export class OrderController {
   ) {
     return this.orderService.findAll({ financialStatus, fulfillmentStatus, customerId })
   }
-
+  @UseGuards(CustomerAuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.orderService.findOne(id);
   }
-
+  @UseGuards(CustomerAuthGuard)
   @Patch(":id")
   update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
     return this.orderService.update(id, updateOrderDto)
   }
-
+  @UseGuards(CustomerAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.orderService.remove(id);

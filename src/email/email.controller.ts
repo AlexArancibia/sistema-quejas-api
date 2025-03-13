@@ -1,6 +1,7 @@
 import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { EmailService } from './email.service';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { PublicKeyGuard } from 'src/auth/guards/public.guard';
 
 
 class SendEmailDto {
@@ -23,7 +24,7 @@ export class EmailController {
   constructor(private readonly emailService: EmailService) {}
 
   @Post('send')
-  @UseGuards(AuthGuard)
+  @UseGuards(PublicKeyGuard)
   async sendEmail(@Body() emailDto: SendEmailDto) {
     try {
       await this.emailService.sendEmail(emailDto);
@@ -32,7 +33,7 @@ export class EmailController {
       return { success: false, message: 'Failed to send email', error: error.message };
     }
   }
-
+  @UseGuards(PublicKeyGuard)
   @Post('submit-form')
   async handleFormSubmission(@Body() formData: FormSubmissionDto) {
     try {

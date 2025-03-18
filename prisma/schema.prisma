@@ -569,6 +569,8 @@ model HeroSection {
   subtitle          String?
   backgroundImage   String?
   mobileBackgroundImage String?
+  backgroundVideo   String?
+  mobileBackgroundVideo String? 
   buttonText        String?
   buttonLink        String?
   styles            Json?     // Stores alignment, colors, opacity, etc.

@@ -18,6 +18,14 @@ export class CreateHeroSectionDto {
   mobileBackgroundImage?: string
 
   @IsOptional()
+  @IsUrl()
+  backgroundVideo?: string
+
+  @IsOptional()
+  @IsUrl()
+  mobileBackgroundVideo?: string
+
+  @IsOptional()
   @IsString()
   buttonText?: string
 
@@ -28,6 +36,10 @@ export class CreateHeroSectionDto {
   @IsOptional()
   @IsJSON()
   styles?: Record<string, any>
+
+  @IsOptional()
+  @IsJSON()
+  metadata?: Record<string, any>
 
   @IsOptional()
   @IsBoolean()

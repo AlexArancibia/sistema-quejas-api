@@ -23,7 +23,7 @@ export class OrderController {
   ) {
     return this.orderService.findAll({ financialStatus, fulfillmentStatus, customerId })
   }
-  @UseGuards(CustomerAuthGuard)
+  @UseGuards(PublicKeyGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.orderService.findOne(id);

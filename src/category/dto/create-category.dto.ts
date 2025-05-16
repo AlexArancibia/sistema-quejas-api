@@ -1,27 +1,40 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsUrl, MaxLength } from "class-validator"
 
 export class CreateCategoryDto {
+  @IsNotEmpty()
   @IsString()
-  name: string;
+  @MaxLength(100)
+  name: string
 
+  @IsNotEmpty()
   @IsString()
-  slug: string;
+  @MaxLength(100)
+  slug: string
 
-  @IsString()
   @IsOptional()
-  description?: string;
-
   @IsString()
-  @IsOptional()
-  parentId?: string;
+  @MaxLength(500)
+  description?: string
 
-  @IsString()
   @IsOptional()
-  metaTitle?: string;
+  @IsUrl()
+  imageUrl?: string
 
+  @IsNotEmpty()
   @IsString()
+  storeId: string
+
   @IsOptional()
-  metaDescription?: string // Meta description for SEO?: string;
+  @IsString()
+  parentId?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  metaTitle?: string
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  metaDescription?: string
 }
-
- 

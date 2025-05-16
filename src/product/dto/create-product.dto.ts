@@ -1,142 +1,91 @@
 import {
+  IsNotEmpty,
   IsString,
   IsOptional,
-  IsNumber,
   IsEnum,
-  IsArray,
-  ValidateNested,
-  IsUUID,
-  Min,
-  IsJSON,
   IsBoolean,
-  IsDateString,
+  IsArray,
+  IsUrl,
+  MaxLength,
+  IsDate,
+  Matches,
+  ValidateNested,
+  ArrayMinSize,
+  IsNumber,
+  IsUUID,
 } from "class-validator"
-import { Type } from "class-transformer"
 import { ProductStatus } from "@prisma/client"
-
-export class CreatePriceDto {
-  @IsUUID()
-  currencyId: string
-
-  @IsNumber()
-  @Min(0)
-  price: number
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  originalPrice?: number
-}
-
-export class CreateProductVariantDto {
-  @IsString()
-  title: string
-
-  @IsOptional()
-  @IsString()
-  sku?: string
-
-  @IsOptional()
-  @IsString()
-  isActive?: boolean
-
-  @IsOptional()
-  @IsString()
-  imageUrl?: string
-
-  @IsNumber()
-  @Min(0)
-  inventoryQuantity: number
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  weightValue?: number
-
- 
-
-  @ValidateNested({ each: true })
-  @Type(() => CreatePriceDto)
-  prices: CreatePriceDto[]
-
- 
-  @IsJSON()
-  attributes: Record<string, any>
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  compareAtPrice?: number
-
-  @IsNumber()
-  @Min(1)
-  position: number
-}
+import { Type } from "class-transformer"
+import { CreateProductVariantDto } from "./create-product-variant.dto";
 
 export class CreateProductDto {
   @IsString()
-  title: string
-
-  @IsOptional()
-  @IsString()
-  description?: string
+  @IsNotEmpty()
+  title: string;
 
   @IsString()
-  slug: string
-
   @IsOptional()
+  description?: string;
+
   @IsString()
-  vendor?: string
+  @IsNotEmpty()
+  slug: string;
 
-  @IsEnum(ProductStatus)
-  status: ProductStatus
-
-  @IsArray()
-  @IsString({ each: true })
-  categoryIds: string[]
-
-  @IsArray()
-  @IsString({ each: true })
-  imageUrls: string[]
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  collectionIds?: string[]
-
-  @IsOptional()
   @IsString()
-  sku?: string
-
-  @IsNumber()
-  @Min(0)
-  inventoryQuantity: number
-
   @IsOptional()
-  @IsNumber()
-  @Min(0)
-  weightValue?: number
-
-  @ValidateNested({ each: true })
-  @Type(() => CreateProductVariantDto)
-  variants: CreateProductVariantDto[]
+  vendor?: string;
 
   @IsBoolean()
-  allowBackorder: boolean
-
   @IsOptional()
+  allowBackorder?: boolean = false;
+
+  @IsDate()
+  @IsOptional()
+  @Type(() => Date)
+  releaseDate?: Date;
+
+  @IsEnum(ProductStatus)
+  @IsOptional()
+  status?: ProductStatus = ProductStatus.ACTIVE;
+
+  @IsNumber()
+  @IsOptional()
+  restockThreshold?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  restockNotify?: boolean;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  categoryIds?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  collectionIds?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  imageUrls: string[] = [];
+
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateProductVariantDto)
+  @ArrayMinSize(1)
+  variants: CreateProductVariantDto[];
+
   @IsString()
-  metaTitle?: string
-
   @IsOptional()
+  metaTitle?: string;
+
   @IsString()
-  metaDescription?: string
-
   @IsOptional()
-  @IsDateString()
-  releaseDate?: string
+  metaDescription?: string;
 
-  @IsJSON()
-  fbt: Record<string, any>
+  @IsString()
+  @IsNotEmpty()
+  storeId: string;
 }
-

@@ -1,42 +1,72 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
-import { ContentService } from './content.service';
-import { CreateContentDto } from './dto/create-content.dto';
-import { UpdateContentDto } from './dto/update-content.dto';
-import { AuthGuard } from "../auth/guards/auth.guard"
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query, Patch } from "@nestjs/common"
+import   { ContentService } from "./content.service"
+import   { CreateContentDto } from "./dto/create-content.dto"
+import   { UpdateContentDto } from "./dto/update-content.dto"
 import { PublicKeyGuard } from "../auth/guards/public.guard"
-@Controller('content')
+import { AuthGuard } from "../auth/guards/auth.guard"
+import   { ContentType } from "@prisma/client"
+ 
+@Controller("contents")
 export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
-  @Post()
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.CREATED)
+  @Post()
   create(@Body() createContentDto: CreateContentDto) {
     return this.contentService.create(createContentDto);
   }
 
-  @Get()
   @UseGuards(PublicKeyGuard)
-  findAll() {
+  @Get()
+  findAll(
+    @Query("storeId") storeId?: string,
+    @Query("type") type?: ContentType,
+    @Query("published") published?: boolean,
+    @Query("category") category?: string,
+  ) {
+    if (storeId) {
+      return this.contentService.findAllByStore(storeId, {
+        type,
+        published: published !== undefined ? published === true : undefined,
+        category,
+      })
+    }
     return this.contentService.findAll()
   }
 
-  @Get(':id')
   @UseGuards(PublicKeyGuard)
-  findOne(@Param('id') id: string) {
-    return this.contentService.findOne(id);
+  @Get(":id")
+  findOne(@Param("id") id: string) {
+    return this.contentService.findOne(id)
   }
 
-  @Patch(":id")
+  @UseGuards(PublicKeyGuard)
+  @Get("by-slug/:storeId/:slug")
+  findBySlug(@Param("storeId") storeId: string, @Param("slug") slug: string) {
+    return this.contentService.findBySlug(storeId, slug)
+  }
+
   @UseGuards(AuthGuard)
-  update(@Param('id') id: string, @Body() updateContentDto: UpdateContentDto) {
+  @Put(":id")
+  update(@Param("id") id: string, @Body() updateContentDto: UpdateContentDto) {
     return this.contentService.update(id, updateContentDto)
   }
 
-  @Delete(':id')
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.contentService.remove(id);
+  @Patch(":id/publish")
+  publish(@Param("id") id: string) {
+    return this.contentService.togglePublished(id, true)
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(":id/unpublish")
+  unpublish(@Param("id") id: string) {
+    return this.contentService.togglePublished(id, false)
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.contentService.remove(id)
   }
 }

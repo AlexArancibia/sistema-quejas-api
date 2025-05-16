@@ -1,45 +1,70 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpStatus, HttpCode } from '@nestjs/common';
-import { PaymentProvidersService } from './payment-providers.service';
-import { CreatePaymentProviderDto } from './dto/create-payment-provider.dto';
-import { UpdatePaymentProviderDto } from './dto/update-payment-provider.dto';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { PublicKeyGuard } from 'src/auth/guards/public.guard';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query, Patch } from "@nestjs/common"
+import { PaymentProviderService } from "./payment-providers.service"
+import { CreatePaymentProviderDto } from "./dto/create-payment-provider.dto"
+import { UpdatePaymentProviderDto } from "./dto/update-payment-provider.dto"
+import { PublicKeyGuard } from "../auth/guards/public.guard"
+import { AuthGuard } from "../auth/guards/auth.guard"
+import { PaymentProviderType } from "@prisma/client"
 
 @Controller("payment-providers")
-export class PaymentProvidersController {
-  constructor(private readonly paymentProvidersService: PaymentProvidersService) {}
+export class PaymentProviderController {
+  constructor(private readonly paymentProviderService: PaymentProviderService) {}
 
+  @UseGuards(AuthGuard)
   @Post()
-  @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.CREATED)
   create(@Body() createPaymentProviderDto: CreatePaymentProviderDto) {
-    return this.paymentProvidersService.create(createPaymentProviderDto);
+    return this.paymentProviderService.create(createPaymentProviderDto)
   }
 
+  @UseGuards(PublicKeyGuard)
   @Get()
-  @UseGuards(PublicKeyGuard)
   findAll() {
-    return this.paymentProvidersService.findAll()
+    return this.paymentProviderService.findAll()
   }
 
-  @Get(':id')
   @UseGuards(PublicKeyGuard)
-  findOne(@Param('id') id: string) {
-    return this.paymentProvidersService.findOne(id);
+  @Get("store/:storeId")
+  findAllByStore(
+    @Param("storeId") storeId: string,
+    @Query("includeInactive") includeInactive?: boolean,
+    @Query("type") type?: PaymentProviderType,
+  ) {
+    return this.paymentProviderService.findAllByStore(storeId, includeInactive === true, type)
   }
 
-  @Patch(":id")
-  @UseGuards(AuthGuard)
-  update(@Param('id') id: string, @Body() updatePaymentProviderDto: UpdatePaymentProviderDto) {
-    return this.paymentProvidersService.update(id, updatePaymentProviderDto)
+  @UseGuards(PublicKeyGuard)
+  @Get(":id")
+  findOne(@Param("id") id: string) {
+    return this.paymentProviderService.findOne(id);
   }
 
-  @Delete(':id')
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.paymentProvidersService.remove(id);
+  @Put(":id")
+  update(@Param("id") id: string, @Body() updatePaymentProviderDto: UpdatePaymentProviderDto) {
+    return this.paymentProviderService.update(id, updatePaymentProviderDto)
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(":id/activate")
+  activate(@Param("id") id: string) {
+    return this.paymentProviderService.toggleActive(id, true);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(":id/deactivate")
+  deactivate(@Param("id") id: string) {
+    return this.paymentProviderService.toggleActive(id, false);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.paymentProviderService.remove(id);
+  }
+
+  @UseGuards(PublicKeyGuard)
+  @Get(":id/statistics")
+  getStatistics(@Param("id") id: string) {
+    return this.paymentProviderService.getStatistics(id);
   }
 }
-
-

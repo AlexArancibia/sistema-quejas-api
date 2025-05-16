@@ -1,44 +1,62 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpStatus, HttpCode } from "@nestjs/common"
-import { HeroSectionService } from './hero-section.service';
-import { CreateHeroSectionDto } from './dto/create-hero-section.dto';
-import { UpdateHeroSectionDto } from './dto/update-hero-section.dto';
-import { AuthGuard } from "src/auth/guards/auth.guard";
-import { PublicKeyGuard } from "src/auth/guards/public.guard";
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query, Patch } from "@nestjs/common"
+import { HeroSectionService } from "./hero-section.service"
+import { CreateHeroSectionDto } from "./dto/create-hero-section.dto"
+import { UpdateHeroSectionDto } from "./dto/update-hero-section.dto"
+import { PublicKeyGuard } from "../auth/guards/public.guard"
+import { AuthGuard } from "../auth/guards/auth.guard"
 
-@Controller('hero-section')
+@Controller("hero-sections")
 export class HeroSectionController {
   constructor(private readonly heroSectionService: HeroSectionService) {}
 
-  @Post()
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.CREATED)
+  @Post()
   create(@Body() createHeroSectionDto: CreateHeroSectionDto) {
     return this.heroSectionService.create(createHeroSectionDto);
   }
 
-  @Get()
   @UseGuards(PublicKeyGuard)
-  findAll() {
+  @Get()
+  findAll(@Query("storeId") storeId?: string, @Query("includeInactive") includeInactive?: boolean) {
+    if (storeId) {
+      return this.heroSectionService.findAllByStore(storeId, includeInactive === true)
+    }
     return this.heroSectionService.findAll()
   }
 
-  @Get(':id')
   @UseGuards(PublicKeyGuard)
-  findOne(@Param('id') id: string) {
+  @Get(":id")
+  findOne(@Param("id") id: string) {
     return this.heroSectionService.findOne(id);
   }
 
-  @Patch(":id")
+  @UseGuards(PublicKeyGuard)
+  @Get("store/:storeId/active")
+  getActiveHeroSection(@Param("storeId") storeId: string) {
+    return this.heroSectionService.getActiveHeroSection(storeId);
+  }
+
   @UseGuards(AuthGuard)
-  update(@Param('id') id: string, @Body() updateHeroSectionDto: UpdateHeroSectionDto) {
+  @Put(":id")
+  update(@Param("id") id: string, @Body() updateHeroSectionDto: UpdateHeroSectionDto) {
     return this.heroSectionService.update(id, updateHeroSectionDto)
   }
 
-  @Delete(':id')
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
+  @Patch(":id/activate")
+  activate(@Param("id") id: string) {
+    return this.heroSectionService.toggleActive(id, true);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(":id/deactivate")
+  deactivate(@Param("id") id: string) {
+    return this.heroSectionService.toggleActive(id, false);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete(":id")
+  remove(@Param("id") id: string) {
     return this.heroSectionService.remove(id);
   }
 }
-

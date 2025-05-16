@@ -1,23 +1,37 @@
-import { IsString, IsEmail, IsEnum, IsOptional, IsUrl } from 'class-validator';
-import { UserRole } from '@prisma/client';  // Asegúrate de que el tipo UserRole está importado correctamente
+import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from "class-validator"
+import { UserRole, AuthProvider } from "@prisma/client"
+import { IsEnum } from "class-validator"
 
-export class CreateUserDto {
+export class CreateAuthDto {
+  @IsNotEmpty()
+  @IsString()
+  firstName: string
+
+  @IsNotEmpty()
+  @IsString()
+  lastName: string
+
+  @IsNotEmpty()
   @IsEmail()
-  email: string;
+  email: string
 
+  @IsNotEmpty()
   @IsString()
-  password: string;
-
-  @IsString()
-  firstName: string;
-
-  @IsString()
-  lastName: string;
+  @MinLength(6)
+  password: string
 
   @IsOptional()
-  @IsUrl()
-  featuredImage?: string
+  @IsString()
+  phone?: string
 
+  @IsOptional()
   @IsEnum(UserRole)
-  role: UserRole;  // Validación para asegurarse de que el rol es uno de los valores definidos en el enum UserRole
+  role?: UserRole = UserRole.CUSTOMER_SERVICE
+
+  @IsOptional()
+  @IsEnum(AuthProvider)
+  authProvider?: AuthProvider = AuthProvider.EMAIL
+  @IsOptional()
+  @IsString()
+  storeId?: string;
 }

@@ -1,247 +1,568 @@
-import { 
-  BadRequestException,
-  ConflictException,
-  Injectable, 
-  InternalServerErrorException, 
-  Logger, 
-  NotFoundException 
-} from '@nestjs/common';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreatePaymentTransactionDto } from './dto/create-payment-transaction.dto';
-import { UpdatePaymentTransactionDto } from './dto/update-payment-transaction.dto';
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common"
+import  { PrismaService } from "../prisma/prisma.service"
+import { CreatePaymentTransactionDto } from "./dto/create-payment-transaction.dto"
+import { UpdatePaymentTransactionDto } from "./dto/update-payment-transaction.dto"
+import { OrderFinancialStatus, PaymentStatus } from "@prisma/client"
 
 @Injectable()
 export class PaymentTransactionService {
-  private readonly logger = new Logger(PaymentTransactionService.name);
+  constructor(private prisma: PrismaService) {}
 
-  constructor(private readonly prisma: PrismaService) {}
-
-  private formatError(context: string, error: any, details?: Record<string, any>) {
-    const errorInfo = {
-      context,
-      timestamp: new Date().toISOString(),
-      errorType: error.constructor.name,
-      errorCode: error.code,
-      errorMessage: error.message,
-      stack: error.stack,
-      meta: error.meta,
-      ...details
-    };
-
-    this.logger.error(JSON.stringify(errorInfo, null, 2));
-    return errorInfo;
-  }
-
-  private handlePrismaError(context: string, error: any, details?: Record<string, any>) {
-    const errorInfo = this.formatError(context, error, details);
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      switch (error.code) {
-        case 'P2002':
-          const field = error.meta?.target?.[0];
-          throw new ConflictException(`Conflicto en campo único: ${field}`, {
-            cause: error,
-            description: `Restricción única falló en [${error.meta?.target}]`
-          });
-
- 
-
-        case 'P2003':
-          const fieldName = error.meta?.field_name;
-          throw new BadRequestException(`Relación inválida: ${fieldName}`, {
-            cause: error,
-            description: `Falla en restricción de clave foránea para ${fieldName}`
-          });
-
-        default:
-          throw new InternalServerErrorException(`Error de base de datos: ${error.code}`, {
-            cause: error,
-            description: `Código de error Prisma: ${error.code}`
-          });
-      }
-    }
-
-    if (error instanceof NotFoundException || 
-        error instanceof BadRequestException || 
-        error instanceof ConflictException) {
-      throw error;
-    }
-
-    throw new InternalServerErrorException('Error inesperado', {
-      cause: error,
-      description: errorInfo.errorMessage
-    });
-  }
-
+  // Create a new payment transaction
   async create(createPaymentTransactionDto: CreatePaymentTransactionDto) {
-    const { orderId, paymentProviderId, currencyId, ...transactionData } = createPaymentTransactionDto;
+    const { orderId, paymentProviderId, currencyId, ...transactionData } = createPaymentTransactionDto
 
-    try {
-      return await this.prisma.$transaction(async (prisma) => {
-        try {
-          // Validar relaciones
-          await this.validateRelationsExist(prisma, {
-            orderId,
-            paymentProviderId,
-            currencyId
-          });
+    // Check if the order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    })
 
-          // Crear transacción
-          return await prisma.paymentTransaction.create({
-            data: {
-              ...transactionData,
-              order: { connect: { id: orderId } },
-              paymentProvider: { connect: { id: paymentProviderId } },
-              currency: { connect: { id: currencyId } },
-            },
-            include: this.getTransactionIncludes()
-          });
-        } catch (error) {
-          this.handlePrismaError('Creación de transacción', error, {
-            transactionData,
-            relatedIds: { orderId, paymentProviderId, currencyId }
-          });
-        }
-      });
-    } catch (error) {
-      throw this.handlePrismaError('Transacción de creación de pago', error);
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`)
     }
+
+    // Check if the payment provider exists
+    const paymentProvider = await this.prisma.paymentProvider.findUnique({
+      where: { id: paymentProviderId },
+    })
+
+    if (!paymentProvider) {
+      throw new NotFoundException(`Payment provider with ID ${paymentProviderId} not found`)
+    }
+
+    // Check if the currency exists
+    const currency = await this.prisma.currency.findUnique({
+      where: { id: currencyId },
+    })
+
+    if (!currency) {
+      throw new NotFoundException(`Currency with ID ${currencyId} not found`)
+    }
+
+    // Create the payment transaction
+    const transaction = await this.prisma.paymentTransaction.create({
+      data: {
+        ...transactionData,
+        order: {
+          connect: { id: orderId },
+        },
+        paymentProvider: {
+          connect: { id: paymentProviderId },
+        },
+        currency: {
+          connect: { id: currencyId },
+        },
+      },
+      include: {
+        order: true,
+        paymentProvider: true,
+        currency: true,
+      },
+    })
+
+    // Update order payment status
+    await this.prisma.order.update({
+      where: { id: orderId },
+      data: {
+        paymentStatus: transactionData.status,
+        financialStatus:
+          transactionData.status === PaymentStatus.COMPLETED
+            ? OrderFinancialStatus.PAID
+            : transactionData.status === PaymentStatus.FAILED
+              ? OrderFinancialStatus.VOIDED
+              : OrderFinancialStatus.PENDING,
+      },
+    })
+
+    return transaction
   }
 
-  private async validateRelationsExist(
-    prisma: Prisma.TransactionClient,
-    ids: { orderId: string; paymentProviderId: string; currencyId: string }
-  ) {
-    try {
-      await Promise.all([
-        prisma.order.findUniqueOrThrow({ where: { id: ids.orderId } }),
-        prisma.paymentProvider.findUniqueOrThrow({ where: { id: ids.paymentProviderId } }),
-        prisma.currency.findUniqueOrThrow({ where: { id: ids.currencyId } })
-      ]);
-    } catch (error) {
-      this.handlePrismaError('Validación de relaciones', error, { relatedIds: ids });
-    }
-  }
-
+  // Get all payment transactions
   async findAll() {
-    try {
-      return await this.prisma.paymentTransaction.findMany({
-        include: this.getTransactionIncludes()
-      });
-    } catch (error) {
-      throw this.handlePrismaError('Consulta de todas las transacciones', error);
-    }
+    return this.prisma.paymentTransaction.findMany({
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            customerInfo: true,
+            storeId: true,
+          },
+        },
+        paymentProvider: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        currency: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
   }
 
+  // Get all payment transactions for a specific order
+  async findAllByOrder(orderId: string) {
+    // Check if the order exists
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+    })
+
+    if (!order) {
+      throw new NotFoundException(`Order with ID ${orderId} not found`)
+    }
+
+    return this.prisma.paymentTransaction.findMany({
+      where: { orderId },
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            customerInfo: true,
+            storeId: true,
+          },
+        },
+        paymentProvider: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        currency: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+  }
+
+  // Get all payment transactions for a specific store
+  async findAllByStore(storeId: string, status?: PaymentStatus) {
+    // Check if the store exists
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    })
+
+    if (!store) {
+      throw new NotFoundException(`Store with ID ${storeId} not found`)
+    }
+
+    // Find all orders for this store
+    const orders = await this.prisma.order.findMany({
+      where: { storeId },
+      select: { id: true },
+    })
+
+    const orderIds = orders.map((order) => order.id)
+
+    // Find all transactions for these orders
+    const where: any = {
+      orderId: {
+        in: orderIds,
+      },
+    }
+
+    if (status) {
+      where.status = status
+    }
+
+    return this.prisma.paymentTransaction.findMany({
+      where,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            customerInfo: true,
+            storeId: true,
+          },
+        },
+        paymentProvider: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        currency: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+  }
+
+  // Get all payment transactions for a specific payment provider
+  async findAllByPaymentProvider(paymentProviderId: string, status?: PaymentStatus) {
+    // Check if the payment provider exists
+    const paymentProvider = await this.prisma.paymentProvider.findUnique({
+      where: { id: paymentProviderId },
+    })
+
+    if (!paymentProvider) {
+      throw new NotFoundException(`Payment provider with ID ${paymentProviderId} not found`)
+    }
+
+    const where: any = { paymentProviderId }
+
+    if (status) {
+      where.status = status
+    }
+
+    return this.prisma.paymentTransaction.findMany({
+      where,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            customerInfo: true,
+            storeId: true,
+          },
+        },
+        paymentProvider: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        currency: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    })
+  }
+
+  // Get a payment transaction by ID
   async findOne(id: string) {
-    try {
-      const transaction = await this.prisma.paymentTransaction.findUnique({
-        where: { id },
-        include: this.getTransactionIncludes()
-      });
+    const transaction = await this.prisma.paymentTransaction.findUnique({
+      where: { id },
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            customerInfo: true,
+            storeId: true,
+            totalPrice: true,
+            currency: true,
+            lineItems: true,
+          },
+        },
+        paymentProvider: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            imgUrl: true,
+          },
+        },
+        currency: true,
+      },
+    })
 
-      if (!transaction) {
-        throw new NotFoundException(`Transacción de pago con ID ${id} no encontrada`);
-      }
-
-      return transaction;
-    } catch (error) {
-      throw this.handlePrismaError('Consulta de transacción', error, { transactionId: id });
+    if (!transaction) {
+      throw new NotFoundException(`Payment transaction with ID ${id} not found`)
     }
+
+    return transaction
   }
 
+  // Update a payment transaction
   async update(id: string, updatePaymentTransactionDto: UpdatePaymentTransactionDto) {
-    const { orderId, paymentProviderId, currencyId, ...updateData } = updatePaymentTransactionDto;
+    const { orderId, paymentProviderId, currencyId, status, ...transactionData } = updatePaymentTransactionDto
 
-    try {
-      return await this.prisma.$transaction(async (prisma) => {
-        try {
-          // Validar existencia de la transacción
-          const existingTransaction = await prisma.paymentTransaction.findUniqueOrThrow({
-            where: { id }
-          });
+    // Check if the transaction exists
+    const existingTransaction = await this.prisma.paymentTransaction.findUnique({
+      where: { id },
+      include: {
+        order: true,
+      },
+    })
 
-          // Validar nuevas relaciones si se proporcionan
-          if (orderId || paymentProviderId || currencyId) {
-            await this.validateUpdateRelations(prisma, {
-              orderId,
-              paymentProviderId,
-              currencyId
-            });
-          }
-
-          return await prisma.paymentTransaction.update({
-            where: { id },
-            data: {
-              ...updateData,
-              ...(orderId && { order: { connect: { id: orderId } } }),
-              ...(paymentProviderId && { paymentProvider: { connect: { id: paymentProviderId } } }),
-              ...(currencyId && { currency: { connect: { id: currencyId } } }),
-            },
-            include: this.getTransactionIncludes()
-          });
-        } catch (error) {
-          this.handlePrismaError('Actualización de transacción', error, {
-            transactionId: id,
-            updateData
-          });
-        }
-      });
-    } catch (error) {
-      throw this.handlePrismaError('Transacción de actualización de pago', error, { transactionId: id });
+    if (!existingTransaction) {
+      throw new NotFoundException(`Payment transaction with ID ${id} not found`)
     }
+
+    // Prepare update data
+    const data: any = { ...transactionData }
+
+    // Handle order connection if provided
+    if (orderId) {
+      // Check if the order exists
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+      })
+
+      if (!order) {
+        throw new NotFoundException(`Order with ID ${orderId} not found`)
+      }
+
+      data.order = {
+        connect: { id: orderId },
+      }
+    }
+
+    // Handle payment provider connection if provided
+    if (paymentProviderId) {
+      // Check if the payment provider exists
+      const paymentProvider = await this.prisma.paymentProvider.findUnique({
+        where: { id: paymentProviderId },
+      })
+
+      if (!paymentProvider) {
+        throw new NotFoundException(`Payment provider with ID ${paymentProviderId} not found`)
+      }
+
+      data.paymentProvider = {
+        connect: { id: paymentProviderId },
+      }
+    }
+
+    // Handle currency connection if provided
+    if (currencyId) {
+      // Check if the currency exists
+      const currency = await this.prisma.currency.findUnique({
+        where: { id: currencyId },
+      })
+
+      if (!currency) {
+        throw new NotFoundException(`Currency with ID ${currencyId} not found`)
+      }
+
+      data.currency = {
+        connect: { id: currencyId },
+      }
+    }
+
+    // Handle status update
+    if (status && status !== existingTransaction.status) {
+      data.status = status
+
+      // Update order payment status if status is changing
+      await this.prisma.order.update({
+        where: { id: existingTransaction.orderId },
+        data: {
+          paymentStatus: status,
+          financialStatus:
+            status === PaymentStatus.COMPLETED
+              ? OrderFinancialStatus.PAID
+              : status === PaymentStatus.FAILED
+                ? OrderFinancialStatus.VOIDED
+                : OrderFinancialStatus.PENDING,
+        },
+      })
+    }
+
+    // Update the transaction
+    return this.prisma.paymentTransaction.update({
+      where: { id },
+      data,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            customerInfo: true,
+            storeId: true,
+          },
+        },
+        paymentProvider: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        currency: true,
+      },
+    })
   }
 
-  private async validateUpdateRelations(
-    prisma: Prisma.TransactionClient,
-    ids: Partial<{ orderId: string; paymentProviderId: string; currencyId: string }>
-  ) {
-    try {
-      const checks = [];
-      
-      if (ids.orderId) {
-        checks.push(prisma.order.findUniqueOrThrow({ where: { id: ids.orderId } }));
-      }
-      if (ids.paymentProviderId) {
-        checks.push(prisma.paymentProvider.findUniqueOrThrow({ where: { id: ids.paymentProviderId } }));
-      }
-      if (ids.currencyId) {
-        checks.push(prisma.currency.findUniqueOrThrow({ where: { id: ids.currencyId } }));
-      }
-
-      await Promise.all(checks);
-    } catch (error) {
-      this.handlePrismaError('Validación de relaciones en actualización', error, { relatedIds: ids });
-    }
-  }
-
+  // Delete a payment transaction
   async remove(id: string) {
-    try {
-      return await this.prisma.$transaction(async (prisma) => {
-        try {
-          const deletedTransaction = await prisma.paymentTransaction.delete({
-            where: { id }
-          });
+    // Check if the transaction exists
+    const existingTransaction = await this.prisma.paymentTransaction.findUnique({
+      where: { id },
+    })
 
-          return {
-            message: `Transacción ${id} eliminada correctamente`,
-            deletedTransaction
-          };
-        } catch (error) {
-          this.handlePrismaError('Eliminación de transacción', error, { transactionId: id });
-        }
-      });
-    } catch (error) {
-      throw this.handlePrismaError('Transacción de eliminación de pago', error, { transactionId: id });
+    if (!existingTransaction) {
+      throw new NotFoundException(`Payment transaction with ID ${id} not found`)
     }
+
+    // Check if the transaction is completed
+    if (existingTransaction.status === PaymentStatus.COMPLETED) {
+      throw new BadRequestException(
+        `Cannot delete a completed payment transaction. Consider creating a refund instead.`,
+      )
+    }
+
+    // Delete the transaction
+    return this.prisma.paymentTransaction.delete({
+      where: { id },
+    })
   }
 
-  private getTransactionIncludes() {
+  // Get payment transaction statistics for a store
+  async getStatisticsByStore(storeId: string, startDate?: Date, endDate?: Date) {
+    // Check if the store exists
+    const store = await this.prisma.store.findUnique({
+      where: { id: storeId },
+    })
+
+    if (!store) {
+      throw new NotFoundException(`Store with ID ${storeId} not found`)
+    }
+
+    // Find all orders for this store
+    const orders = await this.prisma.order.findMany({
+      where: { storeId },
+      select: { id: true },
+    })
+
+    const orderIds = orders.map((order) => order.id)
+
+    // Set date range
+    const where: any = {
+      orderId: {
+        in: orderIds,
+      },
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {}
+      if (startDate) {
+        where.createdAt.gte = startDate
+      }
+      if (endDate) {
+        where.createdAt.lte = endDate
+      }
+    }
+
+    // Get transaction statistics
+    const [
+      totalTransactions,
+      completedTransactions,
+      failedTransactions,
+      pendingTransactions,
+      totalAmount,
+      averageAmount,
+      transactionsByProvider,
+    ] = await Promise.all([
+      this.prisma.paymentTransaction.count({ where }),
+      this.prisma.paymentTransaction.count({
+        where: {
+          ...where,
+          status: PaymentStatus.COMPLETED,
+        },
+      }),
+      this.prisma.paymentTransaction.count({
+        where: {
+          ...where,
+          status: PaymentStatus.FAILED,
+        },
+      }),
+      this.prisma.paymentTransaction.count({
+        where: {
+          ...where,
+          status: PaymentStatus.PENDING,
+        },
+      }),
+      this.prisma.paymentTransaction.aggregate({
+        where: {
+          ...where,
+          status: PaymentStatus.COMPLETED,
+        },
+        _sum: {
+          amount: true,
+        },
+      }),
+      this.prisma.paymentTransaction.aggregate({
+        where: {
+          ...where,
+          status: PaymentStatus.COMPLETED,
+        },
+        _avg: {
+          amount: true,
+        },
+      }),
+      this.prisma.paymentTransaction.groupBy({
+        by: ["paymentProviderId"],
+        where: {
+          ...where,
+          status: PaymentStatus.COMPLETED,
+        },
+        _count: {
+          _all: true,
+        },
+        _sum: {
+          amount: true,
+        },
+      }),
+    ])
+
+    // Get provider details for the grouped transactions
+    const providersDetails = await Promise.all(
+      transactionsByProvider.map(async (group) => {
+        const provider = await this.prisma.paymentProvider.findUnique({
+          where: { id: group.paymentProviderId },
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        })
+        return {
+          provider,
+          count: group._count._all,
+          totalAmount: group._sum.amount,
+        }
+      }),
+    )
+
+    // Get recent transactions
+    const recentTransactions = await this.prisma.paymentTransaction.findMany({
+      where,
+      include: {
+        order: {
+          select: {
+            id: true,
+            orderNumber: true,
+            customerInfo: true,
+          },
+        },
+        paymentProvider: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
+        currency: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 5,
+    })
+
     return {
-      order: true,
-      paymentProvider: true,
-      currency: true
-    };
+      totalTransactions,
+      completedTransactions,
+      failedTransactions,
+      pendingTransactions,
+      successRate: totalTransactions > 0 ? (completedTransactions / totalTransactions) * 100 : 0,
+      totalAmount: totalAmount._sum.amount || 0,
+      averageAmount: averageAmount._avg.amount || 0,
+      transactionsByProvider: providersDetails,
+      recentTransactions,
+    }
   }
 }

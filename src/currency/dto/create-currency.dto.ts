@@ -1,25 +1,50 @@
-import { IsString, IsEnum, IsInt, IsBoolean, Min, Max } from 'class-validator';
-import { CurrencyPosition } from '@prisma/client';
+import { IsNotEmpty, IsString, IsOptional, IsEnum, IsInt, Min, IsBoolean, MaxLength } from "class-validator"
+import { CurrencyPosition } from "@prisma/client"
 
 export class CreateCurrencyDto {
+  @IsNotEmpty()
   @IsString()
-  code: string;
+  @MaxLength(3)
+  code: string
 
+  @IsNotEmpty()
   @IsString()
-  name: string;
+  @MaxLength(50)
+  name: string
 
+  @IsNotEmpty()
   @IsString()
-  symbol: string;
+  @MaxLength(5)
+  symbol: string
 
+  @IsOptional()
   @IsInt()
   @Min(0)
-  @Max(10)
-  decimalPlaces: number;
+  decimalPlaces?: number = 2
 
+  @IsOptional()
   @IsEnum(CurrencyPosition)
-  symbolPosition: CurrencyPosition;
+  symbolPosition?: CurrencyPosition = CurrencyPosition.BEFORE
 
+  @IsOptional()
   @IsBoolean()
-  isActive: boolean;
-}
+  isActive?: boolean = true
 
+  @IsOptional()
+  @IsBoolean()
+  autoUpdateRates?: boolean
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  updateFrequency?: string
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  roundingPrecision?: number
+
+  @IsNotEmpty()
+  @IsString()
+  storeId: string
+}

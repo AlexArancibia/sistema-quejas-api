@@ -1,29 +1,44 @@
-import { IsString, IsOptional, IsBoolean, IsDate, IsDecimal, IsArray, ValidateNested, IsUUID } from "class-validator"
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsPositive,
+  IsBoolean,
+  IsArray,
+  ValidateNested,
+  ArrayMinSize,
+} from "class-validator"
 import { Type } from "class-transformer"
 
-class CreateRefundLineItemDto {
-  @IsUUID()
+export class RefundLineItemDto {
+  @IsNotEmpty()
+  @IsString()
   orderItemId: string
 
-  @IsDecimal()
-  @Type(() => Number)
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
   quantity: number
 
-  @IsDecimal()
-  @Type(() => Number)
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
   amount: number
 
   @IsOptional()
   @IsBoolean()
-  restocked?: boolean
+  restocked?: boolean = false
 }
 
 export class CreateRefundDto {
-  @IsUUID()
+  @IsNotEmpty()
+  @IsString()
   orderId: string
 
-  @IsDecimal()
-  @Type(() => Number)
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
   amount: number
 
   @IsOptional()
@@ -32,16 +47,12 @@ export class CreateRefundDto {
 
   @IsOptional()
   @IsBoolean()
-  restock?: boolean
+  restock?: boolean = false
 
-  @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  processedAt?: Date
-
+  @IsNotEmpty()
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
-  @Type(() => CreateRefundLineItemDto)
-  lineItems: CreateRefundLineItemDto[]
+  @Type(() => RefundLineItemDto)
+  lineItems: RefundLineItemDto[]
 }
-

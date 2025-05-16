@@ -1,36 +1,39 @@
-import { IsString, IsOptional, IsBoolean, ValidateNested, IsArray, IsNumber } from "class-validator"
-import { Type } from "class-transformer"
-import { Currency } from "@prisma/client"
+import { IsString, IsOptional, IsBoolean, IsArray, ValidateNested, IsNotEmpty, IsNumber, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
-class CreateShippingMethodPriceDto {
+export class ShippingMethodPriceDto {
   @IsString()
-  currencyId: string
-
-  
+  @IsNotEmpty()
+  currencyId: string;
 
   @IsNumber()
-  price: number
+  @Min(0)
+  price: number;
 }
 
 export class CreateShippingMethodDto {
   @IsString()
-  name: string
+  @IsNotEmpty()
+  storeId: string;
 
-  @IsOptional()
   @IsString()
-  description?: string
+  @IsNotEmpty()
+  name: string;
 
-  @ValidateNested({ each: true })
-  @Type(() => CreateShippingMethodPriceDto)
-  @IsArray()
-  prices: CreateShippingMethodPriceDto[]
-
-  @IsOptional()
   @IsString()
-  estimatedDeliveryTime?: string
-
   @IsOptional()
+  description?: string;
+
+  @IsString()
+  @IsOptional()
+  estimatedDeliveryTime?: string;
+
   @IsBoolean()
-  isActive?: boolean
-}
+  @IsOptional()
+  isActive?: boolean;
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ShippingMethodPriceDto)
+  prices: ShippingMethodPriceDto[];
+}

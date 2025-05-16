@@ -1,10 +1,11 @@
-import { IsString, IsEmail, IsEnum, IsOptional, MinLength, MaxLength } from 'class-validator';
-import { UserRole } from '@prisma/client';  // Asegúrate de que el tipo UserRole está importado correctamente
+import { IsString, IsEmail, IsEnum, IsOptional, MinLength, IsDate, IsNumber, IsObject, ValidateNested, IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import { UserRole, AuthProvider } from '@prisma/client';
 
 export class UpdateUserDto {
-
   @IsEmail()
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @IsString()
   @IsOptional()
@@ -26,5 +27,61 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsEnum(UserRole)
-  role?: UserRole;  // Si no se pasa, se mantendrá el rol actual
+  role?: UserRole;
+
+  @IsOptional()
+  @IsString()
+  image?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
+
+  @IsOptional()
+  @IsObject()
+  preferences?: Record<string, any>;
+
+  @IsOptional()
+  @IsEnum(AuthProvider)
+  authProvider?: AuthProvider;
+
+  @IsOptional()
+  @IsString()
+  authProviderId?: string;
+
+  @IsOptional()
+  @IsString()
+  accessToken?: string;
+
+  @IsOptional()
+  @IsString()
+  refreshToken?: string;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  tokenExpiresAt?: Date;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  emailVerified?: Date;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  lastLogin?: Date;
+
+  @IsOptional()
+  @IsNumber()
+  failedLoginAttempts?: number;
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  lockedUntil?: Date;
 }

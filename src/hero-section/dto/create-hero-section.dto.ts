@@ -1,12 +1,14 @@
-import { IsString, IsOptional, IsBoolean, IsDate, IsUrl, IsJSON } from "class-validator"
-import { Type } from "class-transformer"
+import { IsNotEmpty, IsString, IsOptional, IsUrl, IsBoolean, IsObject, MaxLength } from "class-validator"
 
 export class CreateHeroSectionDto {
+  @IsNotEmpty()
   @IsString()
+  @MaxLength(100)
   title: string
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   subtitle?: string
 
   @IsOptional()
@@ -27,32 +29,27 @@ export class CreateHeroSectionDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(50)
   buttonText?: string
 
   @IsOptional()
   @IsString()
+  @MaxLength(200)
   buttonLink?: string
 
   @IsOptional()
-  @IsJSON()
+  @IsObject()
   styles?: Record<string, any>
 
   @IsOptional()
-  @IsJSON()
+  @IsObject()
   metadata?: Record<string, any>
 
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean
+  isActive?: boolean = true
 
-  @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  startDate?: Date
-
-  @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  endDate?: Date
+  @IsNotEmpty()
+  @IsString()
+  storeId: string
 }
-

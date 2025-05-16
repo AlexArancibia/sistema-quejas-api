@@ -1,120 +1,163 @@
-import { OrderFinancialStatus, OrderFulfillmentStatus, ShippingStatus } from '@prisma/client';
-import { IsString, IsOptional, IsNumber, IsDecimal, IsDate, IsArray, IsEnum } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsPositive,
+  IsObject,
+  IsArray,
+  IsDate,
+  IsUrl,
+  ValidateNested,
+  ArrayMinSize,
+} from "class-validator"
+import { Type } from "class-transformer"
+import { OrderFinancialStatus, OrderFulfillmentStatus, PaymentStatus, ShippingStatus } from "@prisma/client"
+
+export class OrderItemDto {
+  @IsOptional()
+  @IsString()
+  variantId?: string
+
+  @IsNotEmpty()
+  @IsString()
+  title: string
+
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  quantity: number
+
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  price: number
+
+  @IsOptional()
+  @IsNumber()
+  totalDiscount?: number = 0
+}
 
 export class CreateOrderDto {
+  @IsNotEmpty()
   @IsString()
-  id: string;
+  storeId: string
 
-  @IsOptional()
-  @IsString()
-  customerId?: string;
-
+  @IsNotEmpty()
   @IsNumber()
-  orderNumber: number;
+  orderNumber: number
+
+  @IsNotEmpty()
+  @IsObject()
+  customerInfo: Record<string, any>
 
   @IsOptional()
-  @IsString()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-  
   @IsEnum(OrderFinancialStatus)
-  financialStatus: OrderFinancialStatus
+  financialStatus?: OrderFinancialStatus
 
+  @IsOptional()
   @IsEnum(OrderFulfillmentStatus)
-  fulfillmentStatus: OrderFulfillmentStatus
+  fulfillmentStatus?: OrderFulfillmentStatus
 
-  @IsOptional()
+  @IsNotEmpty()
   @IsString()
-  currencyId?: string;
+  currencyId: string
 
-  @IsDecimal()
-  totalPrice: number;
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  totalPrice: number
 
-  @IsDecimal()
-  subtotalPrice: number;
+  @IsNotEmpty()
+  @IsNumber()
+  @IsPositive()
+  subtotalPrice: number
 
-  @IsDecimal()
-  totalTax: number;
+  @IsNotEmpty()
+  @IsNumber()
+  totalTax: number
 
-  @IsDecimal()
-  totalDiscounts: number;
+  @IsNotEmpty()
+  @IsNumber()
+  totalDiscounts: number
 
+  @IsNotEmpty()
   @IsArray()
-  lineItems: any[]; // Replace with `OrderItemDto[]` if the `OrderItem` DTO is defined
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => OrderItemDto)
+  lineItems: OrderItemDto[]
+
+  @IsOptional()
+  @IsObject()
+  shippingAddress?: Record<string, any>
+
+  @IsOptional()
+  @IsObject()
+  billingAddress?: Record<string, any>
 
   @IsOptional()
   @IsString()
-  shippingAddressId?: string;
+  couponId?: string
 
   @IsOptional()
   @IsString()
-  billingAddressId?: string;
+  paymentProviderId?: string
+
+  @IsOptional()
+  @IsEnum(PaymentStatus)
+  paymentStatus?: PaymentStatus
+
+  @IsOptional()
+  @IsObject()
+  paymentDetails?: Record<string, any>
 
   @IsOptional()
   @IsString()
-  couponId?: string;
+  shippingMethodId?: string
 
   @IsOptional()
-  @IsString()
-  paymentProviderId?: string;
-
-  @IsOptional()
-  @IsString()
-  paymentStatus?: string;
-
-  @IsOptional()
-  paymentDetails?: object;
-
-  @IsOptional()
-  @IsString()
-  shippingMethodId?: string;
-
   @IsEnum(ShippingStatus)
-  shippingStatus: ShippingStatus
+  shippingStatus?: ShippingStatus = ShippingStatus.PENDING
 
   @IsOptional()
   @IsString()
-  trackingNumber?: string;
+  trackingNumber?: string
+
+  @IsOptional()
+  @IsUrl()
+  trackingUrl?: string
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  estimatedDeliveryDate?: Date
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  shippedAt?: Date
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  deliveredAt?: Date
 
   @IsOptional()
   @IsString()
-  trackingUrl?: string;
-
-  @IsOptional()
-  @IsDate()
-  estimatedDeliveryDate?: Date;
-
-  @IsOptional()
-  @IsDate()
-  shippedAt?: Date;
-
-  @IsOptional()
-  @IsDate()
-  deliveredAt?: Date;
+  customerNotes?: string
 
   @IsOptional()
   @IsString()
-  customerNotes?: string;
+  internalNotes?: string
 
   @IsOptional()
   @IsString()
-  internalNotes?: string;
-
-  @IsOptional()
-  @IsString()
-  source?: string;
+  source?: string
 
   @IsOptional()
   @IsDate()
-  preferredDeliveryDate?: Date;
-
-  @IsDate()
-  createdAt: Date;
-
-  @IsOptional()
-  @IsDate()
-  updatedAt?: Date;
+  @Type(() => Date)
+  preferredDeliveryDate?: Date
 }

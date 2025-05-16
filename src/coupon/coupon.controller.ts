@@ -1,43 +1,63 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpStatus, HttpCode } from "@nestjs/common"
-import { CouponsService } from './coupon.service';
-import { CreateCouponDto } from './dto/create-coupon.dto';
-import { UpdateCouponDto } from './dto/update-coupon.dto';
-import { AuthGuard } from "src/auth/guards/auth.guard";
-import { PublicKeyGuard } from "src/auth/guards/public.guard";
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query, Patch } from "@nestjs/common"
+import   { CouponsService } from "./coupon.service"
+import   { CreateCouponDto } from "./dto/create-coupon.dto"
+import   { UpdateCouponDto } from "./dto/update-coupon.dto"
+import { PublicKeyGuard } from "../auth/guards/public.guard"
+import { AuthGuard } from "../auth/guards/auth.guard"
+import { ValidateCouponDto } from "./dto/validate-coupon.dto"
 
-@Controller('coupon')
+@Controller("coupons")
 export class CouponController {
   constructor(private readonly couponService: CouponsService) {}
 
-  @Post()
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.CREATED)
+  @Post()
   create(@Body() createCouponDto: CreateCouponDto) {
     return this.couponService.create(createCouponDto);
   }
 
-  @Get()
   @UseGuards(PublicKeyGuard)
-  findAll() {
+  @Get()
+  findAll(@Query("storeId") storeId?: string, @Query("includeInactive") includeInactive?: boolean) {
+    if (storeId) {
+      return this.couponService.findAllByStore(storeId, includeInactive === true)
+    }
     return this.couponService.findAll()
   }
 
-  @Get(':id')
   @UseGuards(PublicKeyGuard)
-  findOne(@Param('id') id: string) {
-    return this.couponService.findOne(id);
+  @Get(":id")
+  findOne(@Param("id") id: string) {
+    return this.couponService.findOne(id)
   }
 
-  @Patch(":id")
+  @UseGuards(PublicKeyGuard)
+  @Get("by-code/:storeId/:code")
+  findByCode(@Param("storeId") storeId: string, @Param("code") code: string) {
+    return this.couponService.findByCode(storeId, code)
+  }
+
   @UseGuards(AuthGuard)
-  update(@Param('id') id: string, @Body() updateCouponDto: UpdateCouponDto) {
+  @Put(":id")
+  update(@Param("id") id: string, @Body() updateCouponDto: UpdateCouponDto) {
     return this.couponService.update(id, updateCouponDto)
   }
 
-  @Delete(':id')
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
-    return this.couponService.remove(id);
+  @Delete(":id")
+  remove(@Param("id") id: string) {
+    return this.couponService.remove(id)
+  }
+
+  @UseGuards(PublicKeyGuard)
+  @Post("validate")
+  validateCoupon(@Body() validateCouponDto: ValidateCouponDto) {
+    return this.couponService.validateCoupon(validateCouponDto)
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch(":id/apply")
+  applyCoupon(@Param("id") id: string) {
+    return this.couponService.applyCoupon(id)
   }
 }

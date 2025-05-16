@@ -1,17 +1,22 @@
-import { IsString, IsNumber, IsDate } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsNotEmpty, IsString, IsNumber, IsPositive, IsDate } from "class-validator"
+import { Type } from "class-transformer"
 
 export class CreateExchangeRateDto {
+  @IsNotEmpty()
   @IsString()
-  fromCurrencyId: string;
+  fromCurrencyId: string
 
+  @IsNotEmpty()
   @IsString()
-  toCurrencyId: string;
+  toCurrencyId: string
 
-  @IsNumber()
-  rate: number;
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 6 })
+  @IsPositive()
+  rate: number
 
+  @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
-  effectiveDate: Date;
+  effectiveDate: Date
 }

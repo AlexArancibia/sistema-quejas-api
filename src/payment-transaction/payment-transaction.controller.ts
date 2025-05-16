@@ -1,19 +1,33 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpStatus, HttpCode } from '@nestjs/common';
-import { PaymentTransactionService } from './payment-transaction.service';
-import { CreatePaymentTransactionDto } from './dto/create-payment-transaction.dto';
-import { UpdatePaymentTransactionDto } from './dto/update-payment-transaction.dto';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { PublicKeyGuard } from 'src/auth/guards/public.guard';
+import { Controller, Get, Post, Body, Param, Put, Delete, UseGuards, Query } from "@nestjs/common"
+import { PaymentTransactionService } from "./payment-transaction.service"
+import { CreatePaymentTransactionDto } from "./dto/create-payment-transaction.dto"
+import { UpdatePaymentTransactionDto } from "./dto/update-payment-transaction.dto"
+import { PublicKeyGuard } from "../auth/guards/public.guard"
+import { AuthGuard } from "../auth/guards/auth.guard"
+import { PaymentStatus } from "@prisma/client"
+import { Type } from "class-transformer"
+import { IsDate, IsOptional } from "class-validator"
 
-@Controller('payment-transaction')
+class DateRangeDto {
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  startDate?: Date
+
+  @IsOptional()
+  @IsDate()
+  @Type(() => Date)
+  endDate?: Date
+}
+
+@Controller("payment-transactions")
 export class PaymentTransactionController {
   constructor(private readonly paymentTransactionService: PaymentTransactionService) {}
 
   @Post()
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.CREATED)
   create(@Body() createPaymentTransactionDto: CreatePaymentTransactionDto) {
-    return this.paymentTransactionService.create(createPaymentTransactionDto);
+    return this.paymentTransactionService.create(createPaymentTransactionDto)
   }
 
   @Get()
@@ -22,23 +36,48 @@ export class PaymentTransactionController {
     return this.paymentTransactionService.findAll()
   }
 
-  @Get(':id')
   @UseGuards(PublicKeyGuard)
-  findOne(@Param('id') id: string) {
+  @Get("order/:orderId")
+  findAllByOrder(@Param("orderId") orderId: string) {
+    return this.paymentTransactionService.findAllByOrder(orderId)
+  }
+
+  @UseGuards(PublicKeyGuard)
+  @Get("store/:storeId")
+  findAllByStore(@Param("storeId") storeId: string, @Query("status") status?: PaymentStatus) {
+    return this.paymentTransactionService.findAllByStore(storeId, status)
+  }
+
+  @UseGuards(PublicKeyGuard)
+  @Get("provider/:paymentProviderId")
+  findAllByPaymentProvider(
+    @Param("paymentProviderId") paymentProviderId: string,
+    @Query("status") status?: PaymentStatus,
+  ) {
+    return this.paymentTransactionService.findAllByPaymentProvider(paymentProviderId, status)
+  }
+
+  @UseGuards(PublicKeyGuard)
+  @Get(":id")
+  findOne(@Param("id") id: string) {
     return this.paymentTransactionService.findOne(id);
   }
 
-  @Patch(":id")
   @UseGuards(AuthGuard)
-  update(@Param('id') id: string, @Body() updatePaymentTransactionDto: UpdatePaymentTransactionDto) {
+  @Put(":id")
+  update(@Param("id") id: string, @Body() updatePaymentTransactionDto: UpdatePaymentTransactionDto) {
     return this.paymentTransactionService.update(id, updatePaymentTransactionDto)
   }
 
-  @Delete(':id')
   @UseGuards(AuthGuard)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id') id: string) {
+  @Delete(":id")
+  remove(@Param("id") id: string) {
     return this.paymentTransactionService.remove(id);
   }
-}
 
+  @UseGuards(PublicKeyGuard)
+  @Get("statistics/store/:storeId")
+  getStatisticsByStore(@Param("storeId") storeId: string, @Query() dateRange: DateRangeDto) {
+    return this.paymentTransactionService.getStatisticsByStore(storeId, dateRange.startDate, dateRange.endDate)
+  }
+}

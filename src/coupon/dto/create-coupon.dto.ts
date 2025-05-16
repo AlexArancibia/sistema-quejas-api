@@ -1,8 +1,22 @@
-import { IsString, IsOptional, IsEnum, IsDecimal, IsInt, IsBoolean, IsDate, IsUUID, Min } from "class-validator"
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsPositive,
+  IsInt,
+  Min,
+  IsBoolean,
+  IsDate,
+  IsArray,
+  ValidateIf,
+} from "class-validator"
 import { Type } from "class-transformer"
 import { DiscountType } from "@prisma/client"
 
 export class CreateCouponDto {
+  @IsNotEmpty()
   @IsString()
   code: string
 
@@ -10,45 +24,56 @@ export class CreateCouponDto {
   @IsString()
   description?: string
 
+  @IsNotEmpty()
   @IsEnum(DiscountType)
   type: DiscountType
 
-  @IsDecimal()
-  @Type(() => Number)
+  @IsNotEmpty()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsPositive()
+  @ValidateIf((o) => o.type !== DiscountType.FREE_SHIPPING)
   value: number
 
   @IsOptional()
-  @IsDecimal()
-  @Type(() => Number)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @IsPositive()
   minPurchase?: number
 
   @IsOptional()
   @IsInt()
-  @Min(0)
+  @Min(1)
   maxUses?: number
 
+  @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
   startDate: Date
 
+  @IsNotEmpty()
   @IsDate()
   @Type(() => Date)
   endDate: Date
 
   @IsOptional()
   @IsBoolean()
-  isActive?: boolean
+  isActive?: boolean = true
+
+  @IsNotEmpty()
+  @IsString()
+  storeId: string
 
   @IsOptional()
-  @IsUUID(4, { each: true })
+  @IsArray()
+  @IsString({ each: true })
   applicableProductIds?: string[]
 
   @IsOptional()
-  @IsUUID(4, { each: true })
+  @IsArray()
+  @IsString({ each: true })
   applicableCategoryIds?: string[]
 
   @IsOptional()
-  @IsUUID(4, { each: true })
+  @IsArray()
+  @IsString({ each: true })
   applicableCollectionIds?: string[]
 }
-

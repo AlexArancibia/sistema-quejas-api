@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common"
-import type { PrismaService } from "../prisma/prisma.service"
+import { PrismaService } from "../prisma/prisma.service"
 import { Prisma } from "@prisma/client"
 import { CreateFrequentlyBoughtTogetherDto } from "./dto/create-fbt.dto"
 import { UpdateFrequentlyBoughtTogetherDto } from "./dto/update-fbt.dto"

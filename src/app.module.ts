@@ -25,6 +25,7 @@ import { PaymentProvidersModule } from "./payment-providers/payment-providers.mo
 import { CardSectionModule } from './card-section/card-section.module';
 import { TeamSectionModule } from './team-section/team-section.module';
 import { ShopModule } from "./shop/shop.module"
+import { FbtModule } from './fbt/fbt.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ShopModule } from "./shop/shop.module"
     EmailModule,
     CardSectionModule,
     TeamSectionModule,
+    FbtModule,
   ],
 })
 export class AppModule {}

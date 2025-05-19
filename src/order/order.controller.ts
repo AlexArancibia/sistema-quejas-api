@@ -48,7 +48,7 @@ class OrderFilterDto {
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @UseGuards(AuthGuard)
+  @UseGuards(PublicKeyGuard)
   @Post()
   create(@Body() createOrderDto: CreateOrderDto) {
     return this.orderService.create(createOrderDto)
@@ -77,7 +77,7 @@ export class OrderController {
     return this.orderService.findByOrderNumber(storeId, orderNumber)
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(PublicKeyGuard)
   @Put(":id")
   update(@Param("id") id: string, @Body() updateOrderDto: UpdateOrderDto) {
     return this.orderService.update(id, updateOrderDto)

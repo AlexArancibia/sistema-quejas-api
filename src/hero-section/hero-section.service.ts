@@ -97,41 +97,59 @@ export class HeroSectionService {
 
   // Update a hero section
   async update(id: string, updateHeroSectionDto: UpdateHeroSectionDto) {
-    // Check if the hero section exists
-    const existingHeroSection = await this.prisma.heroSection.findUnique({
-      where: { id },
+  console.log('🔧 updateHeroSection called with ID:', id)
+  console.log('📦 updateHeroSectionDto:', JSON.stringify(updateHeroSectionDto, null, 2))
+
+  // Verificar si existe la sección
+  const existingHeroSection = await this.prisma.heroSection.findUnique({
+    where: { id },
+  })
+
+  console.log('🔍 existingHeroSection:', existingHeroSection)
+
+  if (!existingHeroSection) {
+    console.warn(`⚠️ Hero section with ID ${id} not found`)
+    throw new NotFoundException(`Hero section with ID ${id} not found`)
+  }
+
+  // Validar nuevo storeId si es distinto al actual
+  if (
+    updateHeroSectionDto.storeId &&
+    updateHeroSectionDto.storeId !== existingHeroSection.storeId
+  ) {
+    console.log('🔁 Checking existence of new storeId:', updateHeroSectionDto.storeId)
+
+    const store = await this.prisma.store.findUnique({
+      where: { id: updateHeroSectionDto.storeId },
     })
 
-    if (!existingHeroSection) {
-      throw new NotFoundException(`Hero section with ID ${id} not found`)
+    if (!store) {
+      console.warn(`⚠️ Store with ID ${updateHeroSectionDto.storeId} not found`)
+      throw new NotFoundException(`Store with ID ${updateHeroSectionDto.storeId} not found`)
     }
+  }
 
-    // If storeId is being updated, check if the new store exists
-    if (updateHeroSectionDto.storeId && updateHeroSectionDto.storeId !== existingHeroSection.storeId) {
-      const store = await this.prisma.store.findUnique({
-        where: { id: updateHeroSectionDto.storeId },
-      })
-
-      if (!store) {
-        throw new NotFoundException(`Store with ID ${updateHeroSectionDto.storeId} not found`)
-      }
-    }
-
-    // Update the hero section
-    return this.prisma.heroSection.update({
-      where: { id },
-      data: updateHeroSectionDto,
-      include: {
-        store: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-          },
+  // Realizar el update
+  console.log('✅ Updating heroSection...')
+  const updatedHeroSection = await this.prisma.heroSection.update({
+    where: { id },
+    data: updateHeroSectionDto,
+    include: {
+      store: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
         },
       },
-    })
-  }
+    },
+  })
+
+  console.log('✅ Updated heroSection:', updatedHeroSection)
+
+  return updatedHeroSection
+}
+
 
   // Toggle the active status of a hero section
   async toggleActive(id: string, isActive: boolean) {

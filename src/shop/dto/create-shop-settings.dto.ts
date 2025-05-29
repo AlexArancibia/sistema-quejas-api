@@ -39,6 +39,14 @@ export class CreateShopSettingsDto {
   logo?: string
 
   @IsOptional()
+  @IsUrl()
+  logo2?: string
+
+  @IsOptional()
+  @IsUrl()
+  logo3?: string
+
+  @IsOptional()
   @IsString()
   @MaxLength(500)
   description?: string

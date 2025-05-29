@@ -186,6 +186,8 @@ model Store {
 }
 
 // Modelo para almacenar configuraciones de la tienda
+// Modelo para almacenar configuraciones de la tienda
+// Modelo para almacenar configuraciones de la tienda
 model ShopSettings {
   id                  String           @id @default(dbgenerated("'shop_' || substr(gen_random_uuid()::text, 1, 13)"))
   store               Store            @relation(fields: [storeId], references: [id])
@@ -195,6 +197,8 @@ model ShopSettings {
   email               String?          // Contact email for the shop
   shopOwner           String?          // Name of the shop owner
   logo                String?          // URL of the shop's logo
+  logo2                String?          // URL of the shop's logo
+  logo3                String?          // URL of the shop's logo
   description         String?          // Short description of the shop
   address1            String?          // First line of the shop's address
   address2            String?          // Second line of the shop's address
@@ -208,14 +212,14 @@ model ShopSettings {
   
   // Currency Settings
   defaultCurrency     Currency         @relation("DefaultCurrency", fields: [defaultCurrencyId], references: [id])
-  defaultCurrencyId   String           @unique // Default currency used by the shop
+  defaultCurrencyId   String           // Default currency used by the shop
   acceptedCurrencies  Currency[]       @relation("AcceptedCurrencies") // Currencies accepted by the shop
   multiCurrencyEnabled Boolean         @default(false) // Whether multiple currencies are supported
 
   // Shipping Settings
   shippingZones       String?          // Regions where the shop ships
   defaultShippingRate Decimal?         // Default shipping rate
-  freeShippingThreshold Decimal?         // Minimum order amount for free shipping
+  freeShippingThreshold Decimal?       // Minimum order amount for free shipping
 
   // Tax Settings
   taxesIncluded       Boolean          @default(false) // Whether prices include taxes
@@ -262,8 +266,7 @@ model ShopSettings {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 
-  // Relations
-  Currency            Currency[]       @relation("BaseCurrency") // Currencies for which this shop is the base
+  // BaseCurrency relation removed
 }
 
 // Modelo para monedas soportadas por la tienda
@@ -278,9 +281,12 @@ model Currency {
   autoUpdateRates    Boolean?       // Actualización automática de tasas
   updateFrequency    String?        // Frecuencia de actualización
   roundingPrecision  Int?           // Precisión de redondeo
-  defaultForShop     ShopSettings?  @relation("DefaultCurrency")
+  
+  // Relations
+  defaultForShops    ShopSettings[] @relation("DefaultCurrency")
   acceptedByShops    ShopSettings[] @relation("AcceptedCurrencies")
-  baseForShops       ShopSettings[] @relation("BaseCurrency")
+  // baseForShops relation removed
+  
   fromExchangeRates  ExchangeRate[] @relation("FromCurrency")
   toExchangeRates    ExchangeRate[] @relation("ToCurrency")
   orders             Order[]
@@ -291,7 +297,6 @@ model Currency {
   VariantPrice VariantPrice[]
   paymentTransactions PaymentTransaction[]
   ShippingMethodPrice ShippingMethodPrice[]
-
 }
 
 // Modelo para almacenar tipos de cambio entre monedas

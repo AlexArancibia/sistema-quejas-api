@@ -150,7 +150,7 @@ export class ProductService {
       categoryIds,
       collectionIds,
       page = 1,
-      limit = 20,
+      limit = 500,
       sortBy = "createdAt",
       sortOrder = "desc",
     } = searchParams

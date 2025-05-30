@@ -262,6 +262,8 @@ model ShopSettings {
   enableWishlist      Boolean?         // Habilitar listas de deseos
   webhooks            Json?            // Webhooks configurados
 
+  footerDescription String?
+
   // Timestamps
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
@@ -376,7 +378,7 @@ model ProductVariant {
   sku               String?       // Stock Keeping Unit for the variant
   isActive          Boolean       @default(true)
   attributes        Json?         // JSON object containing variant attributes
-  imageUrl          String?       // URL of the variant's image
+  imageUrls          String[]     // URL of the variant's image
   prices            VariantPrice[] // Prices of the variant in different currencies
   inventoryQuantity Int           @default(0) // Available quantity of this variant
   weightValue       Decimal?      // Weight of the variant

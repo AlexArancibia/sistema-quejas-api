@@ -24,9 +24,10 @@ export class CreateProductVariantDto {
   @IsOptional()
   sku: string;
 
-  @IsString()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  imageUrl: string;
+  imageUrls: string[] = [];
 
   @IsNumber()
   @IsOptional()

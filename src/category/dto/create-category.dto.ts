@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, IsOptional, IsUrl, MaxLength } from "class-validator"
+import { IsNotEmpty, IsString, IsOptional, IsUrl, MaxLength, IsNumber } from "class-validator"
 
 export class CreateCategoryDto {
   @IsNotEmpty()
@@ -37,4 +37,8 @@ export class CreateCategoryDto {
   @IsString()
   @MaxLength(200)
   metaDescription?: string
+
+  @IsOptional()
+  @IsNumber()
+  priority: number
 }

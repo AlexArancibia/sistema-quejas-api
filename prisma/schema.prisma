@@ -333,6 +333,7 @@ model Category {
   updatedAt    DateTime   @updatedAt
   metaTitle    String?    // Meta title for SEO
   metaDescription String? // Meta description for SEO
+  priority Int?
 
   Coupon Coupon[]
 

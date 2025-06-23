@@ -1,27 +1,4 @@
-import { IsString, IsOptional, IsBoolean, IsArray, ValidateNested } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ShippingMethodPriceDto } from './create-shipping-method.dto';
+import { PartialType } from "@nestjs/mapped-types"
+import { CreateShippingMethodDto } from "./create-shipping-method.dto"
 
-export class UpdateShippingMethodDto {
-  @IsString()
-  @IsOptional()
-  name?: string;
-
-  @IsString()
-  @IsOptional()
-  description?: string;
-
-  @IsString()
-  @IsOptional()
-  estimatedDeliveryTime?: string;
-
-  @IsBoolean()
-  @IsOptional()
-  isActive?: boolean;
-
-  @IsArray()
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => ShippingMethodPriceDto)
-  prices?: ShippingMethodPriceDto[];
-}
+export class UpdateShippingMethodDto extends PartialType(CreateShippingMethodDto) {}

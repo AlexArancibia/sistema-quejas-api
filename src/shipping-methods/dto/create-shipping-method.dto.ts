@@ -1,39 +1,33 @@
-import { IsString, IsOptional, IsBoolean, IsArray, ValidateNested, IsNotEmpty, IsNumber, Min } from 'class-validator';
-import { Type } from 'class-transformer';
-
-export class ShippingMethodPriceDto {
-  @IsString()
-  @IsNotEmpty()
-  currencyId: string;
-
-  @IsNumber()
-  @Min(0)
-  price: number;
-}
+import { IsString, IsOptional, IsBoolean, IsDecimal, IsArray, ValidateNested } from "class-validator"
+import { Type, Transform } from "class-transformer"
+import { CreateShippingMethodPriceDto } from "./create-shipping-method-price.dto"
 
 export class CreateShippingMethodDto {
   @IsString()
-  @IsNotEmpty()
-  storeId: string;
+  storeId: string
 
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  name: string
 
-  @IsString()
   @IsOptional()
-  description?: string;
-
   @IsString()
-  @IsOptional()
-  estimatedDeliveryTime?: string;
+  description?: string
 
+  @IsOptional()
+  @IsString()
+  estimatedDeliveryTime?: string
+
+  @IsOptional()
+  @IsDecimal()
+  @Transform(({ value }) => Number.parseFloat(value))
+  maxWeight?: number
+
+  @IsOptional()
   @IsBoolean()
-  @IsOptional()
-  isActive?: boolean;
+  isActive?: boolean
 
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => ShippingMethodPriceDto)
-  prices: ShippingMethodPriceDto[];
+  @Type(() => CreateShippingMethodPriceDto)
+  prices: CreateShippingMethodPriceDto[]
 }

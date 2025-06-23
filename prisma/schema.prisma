@@ -537,20 +537,83 @@ model Collection {
   @@unique([storeId, slug])
 }
 
+model Country {
+  id          String   @id @default(dbgenerated("'country_' || substr(gen_random_uuid()::text, 1, 8)"))
+  code        String   @unique // Código ISO 3166-1 Alpha-2: "PE", "US", "CO"
+  code3       String   @unique // Código ISO 3166-1 Alpha-3: "PER", "USA", "COL"
+  name        String   // "Peru", "United States", "Colombia"
+  nameLocal   String?  // "Perú" (nombre en idioma local)
+  phoneCode   String?  // "+51", "+1", "+57"
+  currency    String?  // "PEN", "USD", "COP"
+  
+  states      State[]
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([code])
+  @@index([isActive])
+}
+
+model State {
+  id          String   @id @default(dbgenerated("'state_' || substr(gen_random_uuid()::text, 1, 8)"))
+  country     Country  @relation(fields: [countryCode], references: [code])
+  countryCode String   // "PE", "US"
+  
+  code        String   // Código estándar: "LIM", "CA", "NY"
+  name        String   // "Lima", "California", "New York"
+  nameLocal   String?  // Nombre local si es diferente
+  type        String   @default("state") // "state", "province", "region", "department"
+  
+  cities      City[]
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([countryCode, code])
+  @@index([countryCode, isActive])
+}
+
+model City {
+  id          String   @id @default(dbgenerated("'city_' || substr(gen_random_uuid()::text, 1, 8)"))
+  state       State    @relation(fields: [stateId], references: [id])
+  stateId     String
+  
+  name        String   // "Lima", "Miraflores", "Los Angeles"
+  nameLocal   String?  // Nombre local
+  postalCode  String?  // Código postal principal si aplica
+  latitude    Decimal? // Para cálculos de distancia futuros
+  longitude   Decimal?
+  
+  isActive    Boolean  @default(true)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([stateId, isActive])
+  @@index([name]) // Para búsquedas
+}
+
+// TUS MODELOS ORIGINALES
 model ShippingMethod {
   id          String             @id @default(dbgenerated("'sm_' || substr(gen_random_uuid()::text, 1, 13)"))
   store       Store              @relation(fields: [storeId], references: [id])
-  storeId     String             // Relación con la tienda
-  name        String             // Name of the shipping method
-  description String?            // Description of the shipping method
-  prices      ShippingMethodPrice[] // Prices for different currencies
-  estimatedDeliveryTime String?  // Estimated delivery time (e.g., "3-5 business days")
-  isActive    Boolean            @default(true) // Whether the method is active
-  orders      Order[]            // Orders using this shipping method
+  storeId     String
+  name        String
+  description String?
+  prices      ShippingMethodPrice[]
+  estimatedDeliveryTime String?
+  isActive    Boolean            @default(true)
+  orders      Order[]
+  maxWeight   Decimal?
+  
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
 }
 
+// MODELO MEJORADO CON REFERENCIAS ESTÁNDAR
 model ShippingMethodPrice {
   id               String        @id @default(dbgenerated("'smp_' || substr(gen_random_uuid()::text, 1, 13)"))
   shippingMethod   ShippingMethod @relation(fields: [shippingMethodId], references: [id])
@@ -558,10 +621,30 @@ model ShippingMethodPrice {
   currency         Currency       @relation(fields: [currencyId], references: [id])
   currencyId       String
   price            Decimal
+  
+  // INFORMACIÓN DE ZONA
+  zoneName         String?       // "Lima Metropolitana", "Costa Este USA"
+  zoneDescription  String?
+  
+  // REFERENCIAS GEOGRÁFICAS ESTÁNDAR (usando códigos ISO)
+  countryCodes     String[]      @default([]) // ["PE", "CO"] - ISO codes
+  stateCodes       String[]      @default([]) // ["LIM", "CA"] - códigos de estados
+  cityNames        String[]      @default([]) // ["Lima", "Miraflores"] - nombres de ciudades
+  
+  // CÓDIGOS POSTALES (flexible para diferentes formatos)
+  postalCodes      String[]      @default([]) // ["15001", "90210", "SW1A 1AA"]
+  postalCodePatterns String[]    @default([]) // ["150*", "902*", "SW1A*"]
+  
+  // CONFIGURACIÓN AVANZADA
+  pricePerKg       Decimal?      @default(0)
+  freeWeightLimit  Decimal?      @default(0)
+  zonePriority     Int           @default(0)
+  isZoneActive     Boolean       @default(true)
+  
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  @@unique([shippingMethodId, currencyId])
+  @@index([shippingMethodId, currencyId, zonePriority])
 }
 
 // Modelo para proveedores de pago

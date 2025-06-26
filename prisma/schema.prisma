@@ -605,8 +605,15 @@ model ShippingMethod {
   description String?
   prices      ShippingMethodPrice[]
   estimatedDeliveryTime String?
+  minDeliveryDays       Int?                // Número mínimo de días para entrega
+  maxDeliveryDays       Int?                // Número máximo de días para entrega
+  
   isActive    Boolean            @default(true)
+  availableDays String[] @default(["mon", "tue", "wed", "thu", "fri", "sat", "sun"])
+  cutOffTime  String?            // Hora límite para pedidos hoy (ej. "15:00")
+
   orders      Order[]
+  minWeight   Decimal? @default(0)         // Peso mínimo para aplicar este método
   maxWeight   Decimal?
   
   createdAt   DateTime           @default(now())
@@ -640,6 +647,9 @@ model ShippingMethodPrice {
   freeWeightLimit  Decimal?      @default(0)
   zonePriority     Int           @default(0)
   isZoneActive     Boolean       @default(true)
+
+  freeShippingThreshold Decimal?            // Monto mínimo de pedido para envío gratis
+  freeShippingMessage   String?             // Mensaje promocional (ej. "Envío gratis en pedidos > $50")
   
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt

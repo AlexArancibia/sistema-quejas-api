@@ -46,6 +46,18 @@ export class CreateShippingMethodPriceDto {
   postalCodePatterns?: string[]
 
   // Advanced configuration
+
+  @IsOptional()
+  @IsDecimal()
+  @Transform(({ value }) => Number.parseFloat(value))
+  freeShippingThreshold?: number
+
+
+  @IsOptional()
+  @IsString()
+  freeShippingMessage?: string
+
+
   @IsOptional()
   @IsDecimal()
   @Transform(({ value }) => Number.parseFloat(value))

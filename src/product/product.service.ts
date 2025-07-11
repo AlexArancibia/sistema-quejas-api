@@ -208,7 +208,14 @@ export class ProductService {
     const products = await this.prisma.product.findMany({
       where,
       include: {
-        categories: true,
+        categories: {
+          select:{
+            id:true,
+            name:true,
+            slug:true,
+            parentId:true
+          }
+        },
         collections: true,
         variants: {
           include: {
@@ -220,6 +227,7 @@ export class ProductService {
           },
         },
       },
+ 
       orderBy,
       skip,
       take: limit,

@@ -94,9 +94,28 @@ export class CouponsService {
     return this.prisma.coupon.findMany({
       where,
       include: {
-        applicableProducts: true,
-        applicableCategories: true,
-        applicableCollections: true,
+        applicableProducts: {
+          select:{
+            id:true,
+            storeId:true,
+            title:true
+          }
+        }
+        ,
+        applicableCategories: {
+          select:{
+            id:true,
+            storeId:true,
+            name:true
+          }
+        },
+        applicableCollections: {
+          select:{
+            id:true,
+            storeId:true,
+            title:true
+          }
+        },
       },
       orderBy: {
         createdAt: "desc",

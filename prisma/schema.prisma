@@ -69,6 +69,9 @@ enum PaymentProviderType {
   MERCADOPAGO
   BANK_TRANSFER
   CASH_ON_DELIVERY
+  CULQI
+  IZIPAY
+  NIUBIZ
   OTHER
 }
 

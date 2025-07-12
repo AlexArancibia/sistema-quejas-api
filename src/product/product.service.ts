@@ -319,7 +319,7 @@ export class ProductService {
   // Update a product
   async update(id: string, updateProductDto: UpdateProductDto) {
     const { categoryIds, collectionIds, variants, ...productData } = updateProductDto
-
+    
     // Check if the product exists
     const existingProduct = await this.prisma.product.findUnique({
       where: { id },
@@ -335,28 +335,28 @@ export class ProductService {
         },
       },
     })
-
+    
     if (!existingProduct) {
       throw new NotFoundException(`Product with ID ${id} not found`)
     }
-
+    
     // Prepare update data
     const data: any = { ...productData }
-
+    
     // Update category connections if provided
     if (categoryIds !== undefined) {
       data.categories = {
         set: categoryIds.map((id) => ({ id })),
       }
     }
-
+    
     // Update collection connections if provided
     if (collectionIds !== undefined) {
       data.collections = {
         set: collectionIds.map((id) => ({ id })),
       }
     }
-
+    
     try {
       // Use a transaction to update the product and its variants
       return await this.prisma.$transaction(async (tx) => {
@@ -369,131 +369,111 @@ export class ProductService {
             collections: true,
           },
         })
-
+        
         // Handle variants update if provided
         if (variants && variants.length > 0) {
-          // Get existing variants for comparison
-          const existingVariants = existingProduct.variants
-
-          // Function to create a unique key for variant comparison
-          const createVariantKey = (variant: any) => {
-            const { prices, id, productId, createdAt, updatedAt, ...attributes } = variant
-            return JSON.stringify(attributes, Object.keys(attributes).sort())
+          // Function to compare attributes objects
+          const areAttributesEqual = (existingAttributes: any, newAttributes: any) => {
+            if (!existingAttributes && !newAttributes) return true
+            if (!existingAttributes || !newAttributes) return false
+            
+            const existingKeys = Object.keys(existingAttributes)
+            const newKeys = Object.keys(newAttributes)
+            
+            if (existingKeys.length !== newKeys.length) return false
+            
+            return existingKeys.every(key => existingAttributes[key] === newAttributes[key])
           }
-
-          // Create maps for efficient lookup
-          const existingVariantMap = new Map()
-          const newVariantMap = new Map()
-
-          // Map existing variants by their attributes
-          existingVariants.forEach(variant => {
-            const key = createVariantKey(variant)
-            existingVariantMap.set(key, variant)
-          })
-
-          // Map new variants by their attributes
-          variants.forEach(variant => {
-            const key = createVariantKey(variant)
-            newVariantMap.set(key, variant)
-          })
-
-          // Arrays to track operations
-          const variantsToUpdate = []
-          const variantsToCreate = []
-          const variantsToDelete = []
-
-          // Find variants to update or create
-          for (const [key, newVariant] of newVariantMap) {
-            if (existingVariantMap.has(key)) {
-              // Variant exists, add to update list
-              const existingVariant = existingVariantMap.get(key)
-              variantsToUpdate.push({
-                existing: existingVariant,
-                new: newVariant,
-              })
-            } else {
-              // Variant doesn't exist, add to create list
-              variantsToCreate.push(newVariant)
-            }
-          }
-
-          // Find variants to delete
-          for (const [key, existingVariant] of existingVariantMap) {
-            if (!newVariantMap.has(key)) {
-              variantsToDelete.push(existingVariant)
-            }
-          }
-
-          // Delete variants that no longer exist
-          for (const variant of variantsToDelete) {
-            // Delete variant prices first
-            await tx.variantPrice.deleteMany({
-              where: { variantId: variant.id },
+          
+          const existingVariants = existingProduct.variants || []
+          const processedVariantIds = new Set<string>()
+          
+          // Process each incoming variant
+          for (const variant of variants) {
+            const { prices, id: variantId, productId, createdAt, updatedAt, ...cleanVariantData } = variant as any
+            
+            // Find matching existing variant by attributes
+            const matchingExistingVariant = existingVariants.find(existing => {
+              return !processedVariantIds.has(existing.id) && 
+                    areAttributesEqual(existing.attributes, cleanVariantData.attributes)
             })
             
-            // Delete variant
-            await tx.productVariant.delete({
-              where: { id: variant.id },
-            })
-          }
-
-          // Update existing variants
-          for (const { existing, new: newVariant } of variantsToUpdate) {
-            const { prices, id: variantId, productId, createdAt, updatedAt, ...cleanVariantData } = newVariant as any
-
-            // Update variant data (only if there are changes in non-attribute fields)
-            await tx.productVariant.update({
-              where: { id: existing.id },
-              data: cleanVariantData,
-            })
-
-            // Handle prices update
-            if (prices && prices.length > 0) {
-              // Delete existing prices for this variant
+            if (matchingExistingVariant) {
+              // Variant with same attributes exists, update it and preserve its ID
+              processedVariantIds.add(matchingExistingVariant.id)
+              
+              // Delete existing prices
               await tx.variantPrice.deleteMany({
-                where: { variantId: existing.id },
+                where: { variantId: matchingExistingVariant.id },
               })
-
+              
+              // Update variant data
+              await tx.productVariant.update({
+                where: { id: matchingExistingVariant.id },
+                data: cleanVariantData,
+              })
+              
               // Create new prices
-              for (const price of prices) {
-                await tx.variantPrice.create({
-                  data: {
-                    price: price.price,
-                    variant: { connect: { id: existing.id } },
-                    currency: { connect: { id: price.currencyId } },
-                  },
-                })
+              if (prices && prices.length > 0) {
+                for (const price of prices) {
+                  await tx.variantPrice.create({
+                    data: {
+                      price: price.price,
+                      originalPrice: price.originalPrice || null,
+                      variant: { connect: { id: matchingExistingVariant.id } },
+                      currency: { connect: { id: price.currencyId } },
+                    },
+                  })
+                }
+              }
+              
+            } else {
+              // No matching variant found, create new one
+              const newVariant = await tx.productVariant.create({
+                data: {
+                  ...cleanVariantData,
+                  product: { connect: { id } },
+                },
+              })
+              
+              // Create prices if provided
+              if (prices && prices.length > 0) {
+                for (const price of prices) {
+                  await tx.variantPrice.create({
+                    data: {
+                      price: price.price,
+                      originalPrice: price.originalPrice || null,
+                      variant: { connect: { id: newVariant.id } },
+                      currency: { connect: { id: price.currencyId } },
+                    },
+                  })
+                }
               }
             }
           }
-
-          // Create new variants
-          for (const variant of variantsToCreate) {
-            const { prices, id: variantId, productId, createdAt, updatedAt, ...cleanVariantData } = variant as any
-
-            // Create new variant
-            const newVariant = await tx.productVariant.create({
-              data: {
-                ...cleanVariantData,
-                product: { connect: { id } },
+          
+          // Delete variants that are no longer present in the update
+          const variantsToDelete = existingVariants.filter(
+            existing => !processedVariantIds.has(existing.id)
+          )
+          
+          if (variantsToDelete.length > 0) {
+            // Delete prices first
+            await tx.variantPrice.deleteMany({
+              where: {
+                variantId: { in: variantsToDelete.map(v => v.id) },
               },
             })
-
-            // Create prices if provided
-            if (prices && prices.length > 0) {
-              for (const price of prices) {
-                await tx.variantPrice.create({
-                  data: {
-                    price: price.price,
-                    variant: { connect: { id: newVariant.id } },
-                    currency: { connect: { id: price.currencyId } },
-                  },
-                })
-              }
-            }
+            
+            // Delete variants
+            await tx.productVariant.deleteMany({
+              where: { 
+                id: { in: variantsToDelete.map(v => v.id) },
+              },
+            })
           }
         }
-
+        
         // Fetch the complete updated product with variants and prices
         return tx.product.findUnique({
           where: { id },

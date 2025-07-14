@@ -15,9 +15,9 @@ class SendEmailDto {
 }
 
 class FormSubmissionDto {
-  [key: string]: string
+  html?: string
+  [key: string]: string | undefined // permite cualquier otro campo además de html
 }
-
 
 @Controller('email')
 export class EmailController {
@@ -37,10 +37,11 @@ export class EmailController {
   @Post('submit-form')
   async handleFormSubmission(@Body() formData: FormSubmissionDto) {
     try {
-      await this.emailService.sendFormSubmissionNotification(formData);
-      return { success: true, message: 'Form submission received and notification sent' };
+      const { html, ...data } = formData
+      await this.emailService.sendFormSubmissionNotification(data, html)
+      return { success: true, message: 'Form submission received and notification sent' }
     } catch (error) {
-      return { success: false, message: 'Failed to process form submission', error: error.message };
+      return { success: false, message: 'Failed to process form submission', error: error.message }
     }
   }
 }

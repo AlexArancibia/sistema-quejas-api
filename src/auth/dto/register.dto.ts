@@ -1,7 +1,7 @@
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength, IsEnum } from "class-validator"
 import { UserRole, AuthProvider } from "@prisma/client"
 
-export class CreateAuthDto {
+export class RegisterDto {
   @IsNotEmpty()
   @IsString()
   firstName: string
@@ -24,8 +24,12 @@ export class CreateAuthDto {
   phone?: string
 
   @IsOptional()
+  @IsString()
+  company?: string
+
+  @IsOptional()
   @IsEnum(UserRole)
-  role?: UserRole = UserRole.MANAGER
+  role?: UserRole = UserRole.USER
 
   @IsOptional()
   @IsEnum(AuthProvider)

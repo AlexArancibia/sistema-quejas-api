@@ -43,14 +43,15 @@ export class EmailService {private readonly adminEmail: string
     }
   }
 
-  async sendFormSubmissionNotification(formData: Record<string, string>) {
-    const htmlContent = this.generateFormSubmissionEmailContent(formData)
-    await this.sendEmail({
-      to: this.adminEmail,
-      subject: "Nueva submisión de formulario",
-      html: htmlContent,
-    })
-  }
+  async sendFormSubmissionNotification(formData: Record<string, string>, customHtml?: string) {
+  const htmlContent = customHtml || this.generateFormSubmissionEmailContent(formData)
+
+  await this.sendEmail({
+    to: this.adminEmail,
+    subject: "Nueva submisión de formulario",
+    html: htmlContent,
+  })
+}
 
   private generateFormSubmissionEmailContent(formData: Record<string, string>): string {
     const formContent = Object.entries(formData)

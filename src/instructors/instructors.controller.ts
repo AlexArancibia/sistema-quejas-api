@@ -3,38 +3,39 @@ import { InstructorsService } from "./instructors.service"
 import { CreateInstructorDto } from "./dto/create-instructor.dto"
 import { UpdateInstructorDto } from "./dto/update-instructor.dto"
 import { AuthGuard } from "../auth/guards/auth.guard"
+import { PublicKeyGuard } from "src/auth/guards/public.guard"
 
 @Controller("instructors")
-@UseGuards(AuthGuard)
+
 export class InstructorsController {
   constructor(private readonly instructorsService: InstructorsService) {}
-
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createInstructorDto: CreateInstructorDto) {
     return this.instructorsService.create(createInstructorDto)
   }
-
+  @UseGuards(PublicKeyGuard)
   @Get()
   findAll(branchId?: string, active?: string) {
     const isActive = active === "true" ? true : active === "false" ? false : undefined
     return this.instructorsService.findAll(branchId, isActive)
   }
-
+  @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.instructorsService.findOne(id);
   }
-
+  @UseGuards(AuthGuard)
   @Get(':id/ratings')
   getInstructorRatings(@Param('id') id: string) {
     return this.instructorsService.getInstructorRatings(id);
   }
-
+  @UseGuards(AuthGuard)
   @Patch(":id")
   update(@Param('id') id: string, @Body() updateInstructorDto: UpdateInstructorDto) {
     return this.instructorsService.update(id, updateInstructorDto)
   }
-
+  @UseGuards(AuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.instructorsService.remove(id);

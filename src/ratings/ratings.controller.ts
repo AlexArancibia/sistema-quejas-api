@@ -14,8 +14,7 @@ export class RatingsController {
   create(createRatingDto: CreateRatingDto) {
     return this.ratingsService.create(createRatingDto)
   }
-
-  @UseGuards(AuthGuard)
+@UseGuards(PublicKeyGuard)
   @Get()
   findAll(branchId?: string, instructorId?: string, page?: string, limit?: string) {
     const pageNum = page ? Number.parseInt(page) : 1

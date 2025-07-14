@@ -72,7 +72,7 @@ export class AuthController {
 
   // Admin endpoints
   // Crear usuario SIN confirmación de email (para admins)
-  @UseGuards(PublicKeyGuard)
+  @UseGuards(AuthGuard)
   @Post()
   create(@Body() createAuthDto: CreateAuthDto) {
     return this.authService.create(createAuthDto)

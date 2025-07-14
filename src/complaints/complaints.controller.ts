@@ -15,7 +15,7 @@ export class ComplaintsController {
     return this.complaintsService.create(createComplaintDto)
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(PublicKeyGuard)
   @Get()
   findAll(
     @Query('storeId') storeId?: string,

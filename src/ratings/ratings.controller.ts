@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, UseGuards } from "@nestjs/common"
+import { Controller, Get, Post, Patch, Delete, UseGuards, Body, Param, Query } from "@nestjs/common"
 import { RatingsService } from "./ratings.service"
 import { CreateRatingDto } from "./dto/create-rating.dto"
 import { UpdateRatingDto } from "./dto/update-rating.dto"
@@ -11,44 +11,61 @@ export class RatingsController {
 
   @UseGuards(PublicKeyGuard)
   @Post()
-  create(createRatingDto: CreateRatingDto) {
+  create(@Body() createRatingDto: CreateRatingDto) {
     return this.ratingsService.create(createRatingDto)
   }
-@UseGuards(PublicKeyGuard)
+
+  @UseGuards(PublicKeyGuard)
   @Get()
-  findAll(branchId?: string, instructorId?: string, page?: string, limit?: string) {
+  findAll(
+    @Query('branchId') branchId?: string,
+    @Query('instructorId') instructorId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string
+  ) {
     const pageNum = page ? Number.parseInt(page) : 1
     const limitNum = limit ? Number.parseInt(limit) : 10
-    return this.ratingsService.findAll(branchId, instructorId, pageNum, limitNum)
+    return this.ratingsService.findAll(branchId, instructorId, startDate, endDate, pageNum, limitNum)
   }
 
   @UseGuards(AuthGuard)
   @Get("stats")
-  getStats(branchId?: string, instructorId?: string) {
-    return this.ratingsService.getStats(branchId, instructorId)
+  getStats(
+    @Query('branchId') branchId?: string,
+    @Query('instructorId') instructorId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string
+  ) {
+    return this.ratingsService.getStats(branchId, instructorId, startDate, endDate)
   }
 
   @UseGuards(AuthGuard)
   @Get("analytics")
-  getAnalytics(branchId?: string) {
-    return this.ratingsService.getAnalytics(branchId)
+  getAnalytics(
+    @Query('branchId') branchId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string
+  ) {
+    return this.ratingsService.getAnalytics(branchId, startDate, endDate)
   }
 
   @UseGuards(AuthGuard)
   @Get(":id")
-  findOne(id: string) {
+  findOne(@Param('id') id: string) {
     return this.ratingsService.findOne(id)
   }
 
   @UseGuards(AuthGuard)
   @Patch(":id")
-  update(id: string, updateRatingDto: UpdateRatingDto) {
+  update(@Param('id') id: string, @Body() updateRatingDto: UpdateRatingDto) {
     return this.ratingsService.update(id, updateRatingDto)
   }
 
   @UseGuards(AuthGuard)
   @Delete(":id")
-  remove(id: string) {
+  remove(@Param('id') id: string) {
     return this.ratingsService.remove(id)
   }
 }

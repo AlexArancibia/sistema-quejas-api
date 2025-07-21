@@ -14,6 +14,7 @@ datasource db {
 enum UserRole {
   ADMIN
   MANAGER
+  SUPERVISOR
   USER
 }
 
@@ -163,7 +164,7 @@ model Instructor {
 }
 
 model Complaint {
-  id                     String            @id @default(dbgenerated("'SICLO-' || extract(epoch from now())::text || '-' || substr(gen_random_uuid()::text, 1, 8)"))
+  id                     String            @id @default(dbgenerated("'QUEJA-' || extract(epoch from now())::text || '-' || substr(gen_random_uuid()::text, 1, 8)"))
   fullName               String
   email                  String
   branchId               String
@@ -185,7 +186,7 @@ model Complaint {
 }
 
 model Rating {
-  id                     String     @id @default(dbgenerated("'RATING-' || extract(epoch from now())::text || '-' || substr(gen_random_uuid()::text, 1, 8)"))
+  id                     String     @id @default(dbgenerated("'PUNTAJE-' || extract(epoch from now())::text || '-' || substr(gen_random_uuid()::text, 1, 8)"))
   instructorId           String
   branchId               String
   instructorName         String

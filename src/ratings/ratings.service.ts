@@ -58,7 +58,7 @@ export class RatingsService {
     }
   }
 
-  async findAll(branchId?: string, instructorId?: string, page = 1, limit = 10) {
+  async findAll(branchId?: string, instructorId?: string, startDate?: string, endDate?: string, page = 1, limit = 10) {
     try {
       const where: any = {}
 
@@ -68,6 +68,22 @@ export class RatingsService {
 
       if (instructorId) {
         where.instructorId = instructorId
+      }
+
+      // Filtro por rango de fechas
+      if (startDate || endDate) {
+        where.createdAt = {}
+        
+        if (startDate) {
+          where.createdAt.gte = new Date(startDate)
+        }
+        
+        if (endDate) {
+          // Agregar 23:59:59.999 para incluir todo el día final
+          const endDateTime = new Date(endDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          where.createdAt.lte = endDateTime
+        }
       }
 
       const skip = (page - 1) * limit
@@ -113,7 +129,7 @@ export class RatingsService {
     }
   }
 
-  async getStats(branchId?: string, instructorId?: string) {
+  async getStats(branchId?: string, instructorId?: string, startDate?: string, endDate?: string) {
     try {
       const where: any = {}
 
@@ -123,6 +139,22 @@ export class RatingsService {
 
       if (instructorId) {
         where.instructorId = instructorId
+      }
+
+      // Filtro por rango de fechas
+      if (startDate || endDate) {
+        where.createdAt = {}
+        
+        if (startDate) {
+          where.createdAt.gte = new Date(startDate)
+        }
+        
+        if (endDate) {
+          // Agregar 23:59:59.999 para incluir todo el día final
+          const endDateTime = new Date(endDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          where.createdAt.lte = endDateTime
+        }
       }
 
       const ratings = await this.prisma.rating.findMany({
@@ -184,9 +216,25 @@ export class RatingsService {
     }
   }
 
-  async getAnalytics(branchId?: string) {
+  async getAnalytics(branchId?: string, startDate?: string, endDate?: string) {
     try {
-      const where = branchId ? { branchId } : {}
+      const where: any = branchId ? { branchId } : {}
+
+      // Filtro por rango de fechas
+      if (startDate || endDate) {
+        where.createdAt = {}
+        
+        if (startDate) {
+          where.createdAt.gte = new Date(startDate)
+        }
+        
+        if (endDate) {
+          // Agregar 23:59:59.999 para incluir todo el día final
+          const endDateTime = new Date(endDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          where.createdAt.lte = endDateTime
+        }
+      }
 
       // Obtener ratings agrupados por instructor
       const instructorRatings = await this.prisma.rating.groupBy({

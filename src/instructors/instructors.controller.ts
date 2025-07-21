@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Delete, UseGuards, Body } from "@nestjs/common"
+import { Controller, Get, Post, Patch, Param, Delete, UseGuards, Body, Query } from "@nestjs/common"
 import { InstructorsService } from "./instructors.service"
 import { CreateInstructorDto } from "./dto/create-instructor.dto"
 import { UpdateInstructorDto } from "./dto/update-instructor.dto"
@@ -16,10 +16,15 @@ export class InstructorsController {
   }
   @UseGuards(PublicKeyGuard)
   @Get()
-  findAll(branchId?: string, active?: string) {
-    const isActive = active === "true" ? true : active === "false" ? false : undefined
-    return this.instructorsService.findAll(branchId, isActive)
-  }
+async findAll(
+  @Query('branchId') branchId?: string,
+  @Query('active') active?: string // Recibe como string
+) {
+  // Convertir a boolean
+  const isActive = active === 'true' ? true : active === 'false' ? false : undefined
+  
+  return await this.instructorsService.findAll(branchId, isActive)
+}
   @UseGuards(AuthGuard)
   @Get(':id')
   findOne(@Param('id') id: string) {

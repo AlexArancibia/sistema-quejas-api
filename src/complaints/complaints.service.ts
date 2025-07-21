@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, InternalServerErrorException } from "@ne
 import { PrismaService } from "../prisma/prisma.service"
 import { CreateComplaintDto } from "./dto/create-complaint.dto"
 import { UpdateComplaintDto } from "./dto/update-complaint.dto"
+import { ComplaintPriority, ComplaintStatus } from "@prisma/client"
 
 @Injectable()
 export class ComplaintsService {
@@ -45,7 +46,7 @@ export class ComplaintsService {
     }
   }
 
-  async findAll(branchId?: string, status?: string, priority?: string, page = 1, limit = 10) {
+  async findAll(branchId?: string, status?: ComplaintStatus, priority?: ComplaintPriority, startDate?: string, endDate?: string, page = 1, limit = 10) {
     try {
       const where: any = {}
 
@@ -59,6 +60,22 @@ export class ComplaintsService {
 
       if (priority) {
         where.priority = priority
+      }
+
+      // Filtro por rango de fechas
+      if (startDate || endDate) {
+        where.createdAt = {}
+        
+        if (startDate) {
+          where.createdAt.gte = new Date(startDate)
+        }
+        
+        if (endDate) {
+          // Agregar 23:59:59.999 para incluir todo el día final
+          const endDateTime = new Date(endDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          where.createdAt.lte = endDateTime
+        }
       }
 
       const skip = (page - 1) * limit
@@ -97,9 +114,25 @@ export class ComplaintsService {
     }
   }
 
-  async getStats(branchId?: string) {
+  async getStats(branchId?: string, startDate?: string, endDate?: string) {
     try {
-      const where = branchId ? { branchId } : {}
+      const where: any = branchId ? { branchId } : {}
+
+      // Filtro por rango de fechas
+      if (startDate || endDate) {
+        where.createdAt = {}
+        
+        if (startDate) {
+          where.createdAt.gte = new Date(startDate)
+        }
+        
+        if (endDate) {
+          // Agregar 23:59:59.999 para incluir todo el día final
+          const endDateTime = new Date(endDate)
+          endDateTime.setHours(23, 59, 59, 999)
+          where.createdAt.lte = endDateTime
+        }
+      }
 
       const [
         totalComplaints,

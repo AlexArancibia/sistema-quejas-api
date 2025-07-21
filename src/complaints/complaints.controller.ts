@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Patch, Param, Delete, UseGuards, Query, Body } from "@nestjs/common"
-import { ComplaintsService } from "./complaints.service"
-import { CreateComplaintDto } from "./dto/create-complaint.dto"
-import { UpdateComplaintDto } from "./dto/update-complaint.dto"
-import { AuthGuard } from "../auth/guards/auth.guard"
-import { PublicKeyGuard } from "../auth/guards/public.guard"
+import { Controller, Get, Post, Patch, Param, Delete, UseGuards, Query, Body, ParseIntPipe } from "@nestjs/common";
+import { ComplaintsService } from "./complaints.service";
+import { CreateComplaintDto } from "./dto/create-complaint.dto";
+import { UpdateComplaintDto } from "./dto/update-complaint.dto";
+import { AuthGuard } from "../auth/guards/auth.guard";
+import { PublicKeyGuard } from "../auth/guards/public.guard";
+import { ComplaintStatus, ComplaintPriority } from "@prisma/client";
 
 @Controller("complaints")
 export class ComplaintsController {
@@ -12,44 +13,63 @@ export class ComplaintsController {
   @UseGuards(PublicKeyGuard)
   @Post()
   create(@Body() createComplaintDto: CreateComplaintDto) {
-    return this.complaintsService.create(createComplaintDto)
+    return this.complaintsService.create(createComplaintDto);
   }
 
   @UseGuards(PublicKeyGuard)
-  @Get()
-  findAll(
-    @Query('storeId') storeId?: string,
-    @Query('status') status?: string,
-    @Query('priority') priority?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    const pageNum = page ? Number.parseInt(page) : 1
+@Get()
+async findAll(
+  @Query('branchId') branchId?: string,
+  @Query('status') status?: ComplaintStatus,
+  @Query('priority') priority?: ComplaintPriority,
+  @Query('startDate') startDate?: string,
+  @Query('endDate') endDate?: string,
+  @Query('page') page?: string,
+   @Query('limit') limit?: string
+) {
+  // Validación de parámetros de paginación
+  const pageNum = page ? Number.parseInt(page) : 1
     const limitNum = limit ? Number.parseInt(limit) : 10
-    return this.complaintsService.findAll(storeId, status, priority, pageNum, limitNum)
-  }
+
+  return this.complaintsService.findAll(
+    branchId,
+    status,
+    priority,
+    startDate,
+    endDate,
+    pageNum,
+    limitNum
+  );
+}
 
   @UseGuards(AuthGuard)
   @Get('stats')
-  getStats(@Query('storeId') storeId?: string) {
-    return this.complaintsService.getStats(storeId);
+  async getStats(
+    @Query('branchId') branchId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string
+  ) {
+    return this.complaintsService.getStats(branchId, startDate, endDate);
   }
 
   @UseGuards(AuthGuard)
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.complaintsService.findOne(id);
   }
 
   @UseGuards(AuthGuard)
   @Patch(":id")
-  update(@Param('id') id: string,  @Body() updateComplaintDto: UpdateComplaintDto) {
-    return this.complaintsService.update(id, updateComplaintDto)
+  async update(
+    @Param('id') id: string,
+    @Body() updateComplaintDto: UpdateComplaintDto
+  ) {
+    return this.complaintsService.update(id, updateComplaintDto);
   }
 
   @UseGuards(AuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Param('id') id: string) {
     return this.complaintsService.remove(id);
   }
 }

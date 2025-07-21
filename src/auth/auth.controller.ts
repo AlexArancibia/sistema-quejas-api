@@ -15,6 +15,8 @@ import { PublicKeyGuard } from "./guards/public.guard"
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  
+
   // Registro público CON confirmación de email
   @UseGuards(PublicKeyGuard)
   @Post("register")
@@ -78,7 +80,7 @@ export class AuthController {
     return this.authService.create(createAuthDto)
   }
 
-  @UseGuards(AuthGuard)
+  @UseGuards(PublicKeyGuard)
   @Get()
   findAll() {
     return this.authService.findAll()

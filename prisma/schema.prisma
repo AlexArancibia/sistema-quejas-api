@@ -187,6 +187,8 @@ model Complaint {
 
 model Rating {
   id                     String     @id @default(dbgenerated("'PUNTAJE-' || extract(epoch from now())::text || '-' || substr(gen_random_uuid()::text, 1, 8)"))
+  fullName               String?
+  email                  String?
   instructorId           String
   branchId               String
   instructorName         String

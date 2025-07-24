@@ -1,4 +1,4 @@
-import { IsString, IsUUID, IsInt, IsDecimal, IsOptional, Min, Max, IsEnum } from "class-validator"
+import { IsString, IsUUID, IsInt, IsDecimal, IsOptional, Min, Max, IsEnum, IsEmail } from "class-validator"
 import { Transform } from "class-transformer"
 import { Discipline } from "@prisma/client"
 
@@ -8,6 +8,12 @@ export class CreateRatingDto {
 
   @IsUUID()
   branchId: string
+
+  @IsString()
+  fullName: string
+
+  @IsEmail()
+  email: string
 
   @IsString()
   instructorName: string

@@ -83,10 +83,7 @@ export class EmailService {
       const supervisors = await this.prisma.user.findMany({
         where: {
           role: UserRole.SUPERVISOR,
-          isActive: true,
-          email: {
-            not: null
-          }
+          isActive: true
         },
         select: {
           email: true
@@ -108,9 +105,6 @@ export class EmailService {
         where: {
           role: UserRole.MANAGER,
           isActive: true,
-          email: {
-            not: null
-          },
           branches: {
             some: {
               id: branchId

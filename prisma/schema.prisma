@@ -138,7 +138,6 @@ model Branch {
   
   // Relaciones
   users       User[]
-  instructors Instructor[]
   complaints  Complaint[]
   ratings     Rating[]
   
@@ -151,13 +150,11 @@ model Instructor {
   email      String?
   phone      String?
   discipline Discipline
-  branchId   String
   isActive   Boolean    @default(true)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
   
   // Relaciones
-  branch     Branch     @relation(fields: [branchId], references: [id], onDelete: Cascade)
   ratings    Rating[]
   
   @@map("instructors")

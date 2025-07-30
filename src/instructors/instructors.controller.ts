@@ -16,14 +16,9 @@ export class InstructorsController {
   }
   @UseGuards(PublicKeyGuard)
   @Get()
-async findAll(
-  @Query('branchId') branchId?: string,
-  @Query('active') active?: string // Recibe como string
-) {
-  // Convertir a boolean
-  const isActive = active === 'true' ? true : active === 'false' ? false : undefined
-  
-  return await this.instructorsService.findAll(branchId, isActive)
+findAll(@Query('active') active?: string) {
+  const isActive = active === "true" ? true : active === "false" ? false : undefined
+  return this.instructorsService.findAll(isActive)
 }
   @UseGuards(AuthGuard)
   @Get(':id')

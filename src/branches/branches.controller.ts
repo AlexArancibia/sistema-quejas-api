@@ -34,11 +34,7 @@ export class BranchesController {
     return this.branchesService.getBranchUsers(id)
   }
 
-  @UseGuards(AuthGuard)
-  @Get(':id/instructors')
-  getBranchInstructors(@Param('id') id: string) {
-    return this.branchesService.getBranchInstructors(id)
-  }
+ 
 
   @UseGuards(AuthGuard)
   @Get(":id/complaints")

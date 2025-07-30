@@ -9,15 +9,6 @@ export class InstructorsService {
 
   async create(createInstructorDto: CreateInstructorDto) {
     try {
-      // Verificar que la sucursal existe
-      const branchExists = await this.prisma.branch.findUnique({
-        where: { id: createInstructorDto.branchId },
-      })
-
-      if (!branchExists) {
-        throw new NotFoundException(`Branch with ID ${createInstructorDto.branchId} not found`)
-      }
-
       const instructor = await this.prisma.instructor.create({
         data: {
           ...createInstructorDto,
@@ -25,12 +16,6 @@ export class InstructorsService {
           updatedAt: new Date(),
         },
         include: {
-          branch: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
           _count: {
             select: {
               ratings: true,
@@ -41,20 +26,13 @@ export class InstructorsService {
 
       return instructor
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error
-      }
       throw new InternalServerErrorException("Error creating instructor: " + error.message)
     }
   }
 
-  async findAll(branchId?: string, isActive?: boolean) {
+  async findAll(isActive?: boolean) {
     try {
       const where: any = {}
-
-      if (branchId) {
-        where.branchId = branchId
-      }
 
       if (isActive !== undefined) {
         where.isActive = isActive
@@ -63,12 +41,6 @@ export class InstructorsService {
       return await this.prisma.instructor.findMany({
         where,
         include: {
-          branch: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
           _count: {
             select: {
               ratings: true,
@@ -89,13 +61,6 @@ export class InstructorsService {
       const instructor = await this.prisma.instructor.findUnique({
         where: { id },
         include: {
-          branch: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-            },
-          },
           ratings: {
             orderBy: {
               createdAt: "desc",
@@ -191,12 +156,6 @@ export class InstructorsService {
           updatedAt: new Date(),
         },
         include: {
-          branch: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
           _count: {
             select: {
               ratings: true,

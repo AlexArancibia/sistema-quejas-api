@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsOptional, IsUUID, IsBoolean, IsEnum } from "class-validator"
+import { IsString, IsEmail, IsOptional, IsBoolean, IsEnum } from "class-validator"
 import { Discipline } from "@prisma/client"
 
 export class CreateInstructorDto {
@@ -15,9 +15,6 @@ export class CreateInstructorDto {
 
   @IsEnum(Discipline)
   discipline: Discipline
-
-  @IsUUID()
-  branchId: string
 
   @IsOptional()
   @IsBoolean()

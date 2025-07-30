@@ -26,7 +26,6 @@ export class BranchesService {
           },
           _count: {
             select: {
-              instructors: true,
               complaints: true,
               ratings: true,
             },
@@ -58,7 +57,6 @@ export class BranchesService {
           },
           _count: {
             select: {
-              instructors: true,
               complaints: true,
               ratings: true,
             },
@@ -85,16 +83,6 @@ export class BranchesService {
               lastName: true,
               email: true,
               role: true,
-            },
-          },
-          instructors: {
-            where: { isActive: true },
-            select: {
-              id: true,
-              name: true,
-              discipline: true,
-              email: true,
-              phone: true,
             },
           },
           _count: {
@@ -153,27 +141,8 @@ export class BranchesService {
     }
   }
 
-  async getBranchInstructors(id: string) {
-    try {
-      const instructors = await this.prisma.instructor.findMany({
-        where: { branchId: id },
-        include: {
-          _count: {
-            select: {
-              ratings: true,
-            },
-          },
-        },
-        orderBy: {
-          name: "asc",
-        },
-      })
-
-      return instructors
-    } catch (error) {
-      throw new InternalServerErrorException("Error fetching branch instructors: " + error.message)
-    }
-  }
+  // ELIMINAR este método completamente
+  // async getBranchInstructors(id: string) { ... }
 
   async getBranchComplaints(id: string, status?: string) {
     try {
@@ -238,7 +207,6 @@ export class BranchesService {
           },
           _count: {
             select: {
-              instructors: true,
               complaints: true,
               ratings: true,
             },

@@ -8,8 +8,13 @@ export class CreateComplaintDto {
   @IsEmail()
   email: string
 
+  @IsOptional()
   @IsUUID()
-  branchId: string
+  branchId?: string
+
+  @IsOptional()
+  @IsUUID()
+  areaId?: string
 
   @IsString()
   observationType: string

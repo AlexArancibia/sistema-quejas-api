@@ -12,6 +12,7 @@ import { BranchesModule } from './branches/branches.module';
 import { ComplaintsModule } from './complaints/complaints.module';
 import { InstructorsModule } from './instructors/instructors.module';
 import { RatingsModule } from './ratings/ratings.module';
+import { AreasModule } from './areas/areas.module';
 
 
 @Module({
@@ -38,6 +39,7 @@ import { RatingsModule } from './ratings/ratings.module';
     ComplaintsModule,
     InstructorsModule,
     RatingsModule,
+    AreasModule,
   ],
 })
 export class AppModule {}

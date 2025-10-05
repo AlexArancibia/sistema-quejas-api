@@ -135,10 +135,8 @@ export class InstructorsService {
         averageNPS: ratings.length > 0 ? ratings.reduce((sum, r) => sum + Number(r.npsScore), 0) / ratings.length : 0,
       }
 
-      return {
-        ratings,
-        stats,
-      }
+      // Devolver solo el array de ratings para compatibilidad con el frontend
+      return ratings;
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error

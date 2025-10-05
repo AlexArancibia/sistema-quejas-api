@@ -166,6 +166,14 @@ export class BranchesService {
 
   async getBranchRatings(id: string) {
     try {
+      const branch = await this.prisma.branch.findUnique({
+        where: { id },
+      })
+
+      if (!branch) {
+        throw new NotFoundException(`Branch with ID ${id} not found`)
+      }
+
       const ratings = await this.prisma.rating.findMany({
         where: { branchId: id },
         include: {
@@ -183,6 +191,9 @@ export class BranchesService {
 
       return ratings
     } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error
+      }
       throw new InternalServerErrorException("Error fetching branch ratings: " + error.message)
     }
   }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Delete, UseGuards, Query, Body, ParseIntPipe } from "@nestjs/common";
+import { Controller, Get, Post, Patch, Param, Delete, UseGuards, Query, Body, ParseIntPipe, Request } from "@nestjs/common";
 import { ComplaintsService } from "./complaints.service";
 import { CreateComplaintDto } from "./dto/create-complaint.dto";
 import { UpdateComplaintDto } from "./dto/update-complaint.dto";
@@ -20,25 +20,32 @@ export class ComplaintsController {
 @Get()
 async findAll(
   @Query('branchId') branchId?: string,
+  @Query('areaId') areaId?: string,
   @Query('status') status?: ComplaintStatus,
   @Query('priority') priority?: ComplaintPriority,
   @Query('startDate') startDate?: string,
   @Query('endDate') endDate?: string,
   @Query('page') page?: string,
-   @Query('limit') limit?: string
+  @Query('limit') limit?: string,
+  @Request() req?: any
 ) {
   // Validación de parámetros de paginación
   const pageNum = page ? Number.parseInt(page) : 1
-    const limitNum = limit ? Number.parseInt(limit) : 10
+  const limitNum = limit ? Number.parseInt(limit) : 10
+  
+  // Obtener el rol del usuario si está autenticado
+  const userRole = req?.user?.role
 
   return this.complaintsService.findAll(
     branchId,
+    areaId,
     status,
     priority,
     startDate,
     endDate,
     pageNum,
-    limitNum
+    limitNum,
+    userRole
   );
 }
 

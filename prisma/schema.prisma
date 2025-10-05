@@ -45,6 +45,22 @@ enum Discipline {
   YOGA
 }
 
+// Modelo Area para categorizar sugerencias
+model Area {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  color       String?  @default("#3b82f6") // Color para UI
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relaciones
+  complaints  Complaint[]
+  
+  @@map("areas")
+}
+
 // Modelo User actualizado (sin taxId, acceptsMarketing, Address)
 model User {
   id                  String        @id @default(cuid())
@@ -164,7 +180,8 @@ model Complaint {
   id                     String            @id @default(dbgenerated("'QUEJA-' || extract(epoch from now())::text || '-' || substr(gen_random_uuid()::text, 1, 8)"))
   fullName               String
   email                  String
-  branchId               String
+  branchId               String?
+  areaId                 String?           // Nueva relación con Area
   observationType        String
   detail                 String
   priority               ComplaintPriority
@@ -177,7 +194,8 @@ model Complaint {
   updatedAt              DateTime          @updatedAt
   
   // Relaciones
-  branch                 Branch            @relation(fields: [branchId], references: [id])
+  branch                 Branch?           @relation(fields: [branchId], references: [id])
+  area                   Area?             @relation(fields: [areaId], references: [id])
   
   @@map("complaints")
 }

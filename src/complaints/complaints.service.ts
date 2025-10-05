@@ -120,7 +120,6 @@ export class ComplaintsService {
               select: {
                 id: true,
                 name: true,
-                color: true,
               },
             },
           },

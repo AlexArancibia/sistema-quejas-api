@@ -27,7 +27,6 @@ export interface ComplaintWithRelations {
   area?: {
     id: string;
     name: string;
-    color?: string;
   };
 }
 
